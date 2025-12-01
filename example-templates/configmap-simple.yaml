@@ -1,0 +1,31 @@
+apiVersion: toboggan.md/v1
+kind: Template
+metadata:
+  name: configmap-simple
+  namespace: default
+spec:
+  patches:
+    - path: 'metadata.generateName'
+      target: configmap
+      template: '{{variables.name}}-lalala-'
+  resources:
+    - k8s-type: configmap
+      max: 1
+      min: 1
+      required: true
+      template: |-
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: ''
+        data:
+          foo: bar
+          fizz: buzz
+  variables:
+    - metadata:
+      name: name
+      required: true
+      schema:
+        openAPIV3Schema:
+          description: prefix to use with metadata.generateName
+          type: string
