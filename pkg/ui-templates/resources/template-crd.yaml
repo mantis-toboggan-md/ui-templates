@@ -392,6 +392,9 @@ spec:
                   items:
                     type: object
                     properties:
+                      name:
+                        type: string
+                        description: unique name for this set of resources, to use used in patches
                       k8s-type:
                         type: string
                       min:
@@ -412,10 +415,10 @@ spec:
                     type: object
                     properties:
                       target:
-                        description: Which resources to apply this patch to. This must match at least one k8s-type in resources
+                        description: Which resources to apply this patch to. This must match at least one name in resources
                         type: string
                       path:
-                        description: Where in the resource to apply the patch
+                        description: Where in the resource to apply the patch. This field accepts JSONpath
                         type: string
                       template:
                         description: Patch to be applied at the specified path. This field accepts handlebars templates. 

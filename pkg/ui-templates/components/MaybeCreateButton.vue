@@ -6,18 +6,29 @@ export default {
     const isClusterScoped = this.$route?.params?.cluster && this.$route.params.cluster !== '_';
 
     this.steveStore = isClusterScoped ? 'cluster' : 'management';
-    let templateSchema;
 
     try {
-      templateSchema = await this.$store.dispatch(`${ this.steveStore }/find`, { type: 'schema', id: 'toboggan.md.template' });
+      const currentTypeSchema = await this.$store.dispatch(`${ this.steveStore }/find`, { type: 'schema', id: this.currentType });
+
+      this.canCreate = currentTypeSchema?.collectionMethods.find((x) => x.toLowerCase() === 'post');
     } catch {}
-    if (templateSchema) {
-      this.templates = await this.$store.dispatch(`${ this.steveStore }/findAll`, { type: 'toboggan.md.template' });
+
+    if (this.canCreate) {
+      let templateSchema;
+
+      try {
+        templateSchema = await this.$store.dispatch(`${ this.steveStore }/find`, { type: 'schema', id: 'toboggan.md.template' });
+      } catch {}
+      if (templateSchema) {
+        this.templates = await this.$store.dispatch(`${ this.steveStore }/findAll`, { type: 'toboggan.md.template' });
+      }
     }
   },
 
   data() {
-    return { steveStore: '', templates: [] };
+    return {
+      canCreate: false, steveStore: '', templates: []
+    };
   },
 
   computed: {
@@ -43,10 +54,6 @@ export default {
       };
     },
 
-    canCreate() {
-      return true; // TODO nb
-    },
-
     showCreateFromTemplate() {
       return this.hasTemplates && this.canCreate;
     }
@@ -57,7 +64,7 @@ export default {
 
 <template>
   <div
-    v-if="hasTemplates"
+    v-if="showCreateFromTemplate"
     class="button-container"
   >
     <router-link

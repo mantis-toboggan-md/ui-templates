@@ -5,7 +5,6 @@ export default class UITemplate extends SteveModel {
   // used to determine whether to show create from template btn in list view
   get targetTypes() {
     return (this.spec?.resources || []).reduce((all, r) => {
-      console.log('**** spec resource', r);
       if (r['k8s-type'] && r.min > 0) {
         all.push(r['k8s-type']);
       }

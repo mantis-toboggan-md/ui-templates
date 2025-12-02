@@ -9,7 +9,8 @@ spec:
       target: configmap
       template: '{{variables.name}}-lalala-'
   resources:
-    - k8s-type: configmap
+    - name: configmap
+      k8s-type: configmap
       max: 1
       min: 1
       required: true
