@@ -11,7 +11,7 @@ import cloneDeep from 'lodash/cloneDeep';
  * each time a user adds a resource an entry is added to requestedResources
  */
 
-export const generateManifest = (store, uitemplate, variableConfiguration = [], requestedResources = []) => {
+export const generateManifest = (store, uitemplate, variableConfiguration = [], requestedResources = {}) => {
   const { resources, variables, patches } = (uitemplate?.spec || {});
 
   if (!resources || !variables || !patches) {
@@ -55,13 +55,13 @@ export const generateManifest = (store, uitemplate, variableConfiguration = [], 
     return patchTemplate({ variables: templateContext });
   };
 
-  const resourcesToPatch = requestedResources.map((req) => {
-    const name = req.name;
-    const defaultTemplate = resourceTemplatesJS[name];
+  Object.keys(requestedResources).forEach( (resourceName) => {
+    const defaultTemplate = resourceTemplatesJS[resourceName];
 
-    return { name, value: cloneDeep(defaultTemplate) };
+    requestedResources[resourceName].forEach((r) => {
+      r.objectToBePatched = cloneDeep(defaultTemplate);
+    });
   });
-
   patches.forEach((p = {}) => {
     const { target } = p;
 
@@ -69,10 +69,10 @@ export const generateManifest = (store, uitemplate, variableConfiguration = [], 
       return;
     }
 
-    const targetResources = requestedResources.filter((r) => r.name === target);
+    const targetResources = requestedResources[target];
 
     targetResources.forEach((r) => {
-      const objectToBePatched = resourcesToPatch.find((resource) => resource.name === r.name)?.value;
+      const objectToBePatched = r.objectToBePatched;
 
       const overrides = r.overrides || [];
 
@@ -88,7 +88,13 @@ export const generateManifest = (store, uitemplate, variableConfiguration = [], 
   let out;
 
   try {
-    out = resourcesToPatch.map((r) => jsyaml.dump(r.value)).join('\n---\n\n');
+    const allResourcesToSave = Object.keys(requestedResources).reduce((all, resourceName) => {
+      all.push(...requestedResources[resourceName].map((r) => r.objectToBePatched));
+
+      return all;
+    }, []);
+
+    out = allResourcesToSave.map((r) => jsyaml.dump(r)).join('\n---\n\n');
   } catch (e) {
     store.dispatch('notifications/add',
       {

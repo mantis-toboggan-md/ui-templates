@@ -45,6 +45,12 @@ export default {
       }
     },
 
+    // if defined, used to show a subset of variables that can be overridden on an individual-resource level
+    resourceScope: {
+      type:    String,
+      default: ''
+    },
+
     // // pool or deployment
     // machineClassType: {
     //   type:    String,
@@ -57,11 +63,11 @@ export default {
     //   default: null
     // },
 
-    // // used in machine context to display the global value as a placeholder
-    // globalVariables: {
-    //   type:    Array,
-    //   default: () => []
-    // },
+    // used in machine context to display the global value as a placeholder
+    globalVariables: {
+      type:    Array,
+      default: () => []
+    },
 
     section: {
       type:    String,
@@ -100,7 +106,7 @@ export default {
     },
 
     variableDefinitions(neu, old) {
-      // if (!this.isMachineScoped) {
+      // if (!this.isResourceScoped) {
       this.updateVariableDefaults(neu, old);
       // }
       this.$nextTick(() => {
@@ -110,7 +116,7 @@ export default {
   },
 
   created() {
-    // if (!this.isMachineScoped) {
+    // if (!this.isResourceScoped) {
     this.updateVariableDefaults(this.variableDefinitions, []);
     // }
   },
@@ -125,8 +131,8 @@ export default {
     },
 
     // is  the component being used for top  level cluster variables or machine overrides?
-    isMachineScoped() {
-      return !!this.machineClassName && !!this.machineClassType;
+    isResourceScoped() {
+      return !!this.resourceScope;
     },
 
     // if not machine scoped, scope using section prop
@@ -134,7 +140,7 @@ export default {
     variableDefinitions() {
       const allVariableDefinitions = this.uitemplate?.spec?.variables || [];
 
-      if (!this.isMachineScoped) {
+      if (!this.isResourceScoped) {
         // variables with annotation matching this section
         if (this.section) {
           return allVariableDefinitions.filter((v) => (v?.metadata?.annotations?.[ANNOTATIONS.SECTION] || '').toLowerCase() === this.section);
@@ -144,24 +150,24 @@ export default {
           return allVariableDefinitions.filter((v) => !Object.values(FORM_SECTIONS).includes((v?.metadata?.annotations?.[ANNOTATIONS.SECTION] || '').toLowerCase()) || !v?.metadata?.annotations?.[ANNOTATIONS.SECTION]);
         }
       }
-      const variableNames = this.machineScopedJsonPatches.reduce((names, patch) => {
-        const valueFromVariable = patch?.valueFrom?.variable;
+      // const variableNames = this.resourceScopedVariableNames.reduce((names, patch) => {
+      //   const valueFromVariable = patch?.valueFrom?.variable;
 
-        if (!valueFromVariable) {
-          return names;
-        }
+      //   if (!valueFromVariable) {
+      //     return names;
+      //   }
 
-        // the value here could be a field or index of the variable, defined <variable definition.name>.<some field> or <variable definition name>[i]
-        const parsedName = valueFromVariable.split(/\.|\[/)[0];
+      //   // the value here could be a field or index of the variable, defined <variable definition.name>.<some field> or <variable definition name>[i]
+      //   const parsedName = valueFromVariable.split(/\.|\[/)[0];
 
-        if (parsedName !== 'builtin') {
-          names.push(parsedName);
-        }
+      //   if (parsedName !== 'builtin') {
+      //     names.push(parsedName);
+      //   }
 
-        return names;
-      }, []);
+      //   return names;
+      // }, []);
 
-      return allVariableDefinitions.filter((v) => variableNames.includes(v.name));
+      return allVariableDefinitions.filter((v) => this.resourceScopedVariableNames.includes(v.name));
     },
 
     // group variables by section
@@ -187,7 +193,7 @@ export default {
     // if machine scoped, ignore sections
     groupedVariableDefinitions() {
       const out = { };
-      const startWith = this.isMachineScoped ? { misc: this.variableDefinitions } : this.sectionedVariableDefinitions;
+      const startWith = this.isResourceScoped ? { misc: this.variableDefinitions } : this.sectionedVariableDefinitions;
 
       for (const section in startWith) {
         const grouped = { };
@@ -227,29 +233,13 @@ export default {
       return out;
     },
 
-    machineScopedJsonPatches() {
-      if (!this.isMachineScoped) {
+    resourceScopedVariableNames() {
+      if (!this.isResourceScoped) {
         return [];
       }
-      const out = [];
-      const matchName = this.machineClassName;
-      const matchKey = this.machineClassType;
+      const def = (this.uitemplate?.spec?.resources || []).find((r) => r.name === this.resourceScope);
 
-      const patches = this.uitemplate?.spec?.patches || [];
-
-      patches.forEach((p) => {
-        const definitions = p?.definitions || [];
-
-        definitions.forEach((definition) => {
-          const matchMachines = definition?.selector?.matchResources?.[matchKey]?.names || [];
-
-          if (matchMachines.includes(matchName)) {
-            out.push(...definition.jsonPatches);
-          }
-        });
-      });
-
-      return out;
+      return def?.overrides || [];
     },
 
   },
@@ -345,11 +335,11 @@ export default {
       class="var-group"
     >
       <Accordion
-        v-if="!section && !isMachineScoped"
+        v-if="!section && !isResourceScoped"
         class="mt-20 "
-        :class="{'machine-group':isMachineScoped}"
+        :class="{'machine-group':isResourceScoped}"
         :title="withFallback(`capi.variables.${key}`, null, key)"
-        :open-initially="!isMachineScoped"
+        :open-initially="!isResourceScoped"
       >
         <div
           v-for="(group, label) in s"
@@ -372,7 +362,7 @@ export default {
                   :all-variables="value"
                   :variable="variableDef"
                   :value="valueFor(variableDef)"
-                  :is-machine-scoped="isMachineScoped"
+                  :is-machine-scoped="isResourceScoped"
                   :global-variables="globalVariables"
                   :validate-required="!machineDeploymentClass && !machinePoolClass"
                   :cluster-namespace="clusterNamespace"
@@ -405,8 +395,8 @@ export default {
                 :all-variables="value"
                 :variable="variableDef"
                 :value="valueFor(variableDef)"
-                :validate-required="!isMachineScoped"
-                :is-machine-scoped="isMachineScoped"
+                :validate-required="!isResourceScoped"
+                :is-machine-scoped="isResourceScoped"
                 :cluster-namespace="clusterNamespace"
                 @update:value="e=>updateVariables(e, variableDef)"
                 @validation-passed="updateErrors"
@@ -423,7 +413,7 @@ export default {
       </Accordion>
       <div v-else>
         <div
-          v-if="isMachineScoped"
+          v-if="isResourceScoped"
           :style="{cursor: 'pointer'}"
           class="expander mt-10"
           @click="()=>expanded=!expanded"
@@ -436,7 +426,7 @@ export default {
           </h4>
         </div>
         <div
-          v-if="expanded || !isMachineScoped"
+          v-if="expanded || !isResourceScoped"
           :class="{'expandee':expanded}"
         >
           <div
@@ -461,9 +451,9 @@ export default {
                     :all-variables="value"
                     :variable="variableDef"
                     :value="valueFor(variableDef)"
-                    :is-machine-scoped="isMachineScoped"
+                    :is-machine-scoped="isResourceScoped"
                     :global-variables="globalVariables"
-                    :validate-required="!isMachineScoped"
+                    :validate-required="!isResourceScoped"
                     :cluster-namespace="clusterNamespace"
                     :mode="mode"
                     @update:value="e=>updateVariables(e, variableDef)"
@@ -495,8 +485,8 @@ export default {
                   :all-variables="value"
                   :variable="variableDef"
                   :value="valueFor(variableDef)"
-                  :validate-required="!isMachineScoped"
-                  :is-machine-scoped="isMachineScoped"
+                  :validate-required="!isResourceScoped"
+                  :is-machine-scoped="isResourceScoped"
                   :cluster-namespace="clusterNamespace"
                   :mode="mode"
                   @update:value="e=>updateVariables(e, variableDef)"

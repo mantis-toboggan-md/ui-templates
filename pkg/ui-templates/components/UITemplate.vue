@@ -7,6 +7,7 @@ import CreateEditView from '@shell/mixins/create-edit-view';
 import Banner from '@components/Banner/Banner.vue';
 
 import Variables from './Variables/index.vue';
+import UITemplateSubResource from './UITemplateSubResource.vue';
 import { generateManifest } from '../utils/generate-manifest';
 
 export default {
@@ -20,7 +21,8 @@ export default {
     LabeledSelect,
     YamlEditor,
     AsyncButton,
-    Banner
+    Banner,
+    UITemplateSubResource
   },
 
   props: {
@@ -51,7 +53,7 @@ export default {
       templates:            [],
       selectedTemplate:     null,
       configuredVariables:  [],
-      requestedResources:   [],
+      requestedResources:   {},
       allVariablesValid:    false,
       manifest:             '',
     };
@@ -60,7 +62,7 @@ export default {
   watch: {
     selectedTemplate() {
       this.configuredVariables = [];
-      this.requestedResources = [];
+      this.requestedResources = {};
       this.manifest = '';
       this.initializeResourceRequests();
     }
@@ -97,11 +99,27 @@ export default {
           let i = 0;
 
           while (i < r.min) {
-            this.requestedResources.push({ name: r.name, overrides: [] });
+            // this.requestedResources.push({ name: r.name, overrides: [] });
+            if (!this.requestedResources[r.name]) {
+              this.requestedResources[r.name] = [];
+            }
+            this.requestedResources[r.name].push({ overrides: [] });
             i++;
           }
         }
       });
+    },
+
+    addInstanceOfResource(name) {
+      if (!this.requestedResources[name]) {
+        this.requestedResources[name] = [];
+      }
+
+      this.requestedResources[name].push({ overrides: [] });
+    },
+
+    removeInstanceOfResource(name, idx) {
+      this.requestedResources[name].splice(idx, 1);
     },
 
     async saveManifest(cb) {
@@ -178,7 +196,18 @@ export default {
           v-for="resource in addableResources"
           :key="resource.name"
         >
-          <button>Add {{ resource.name }}</button>
+          <UITemplateSubResource
+            v-for="r, i in requestedResources[resource.name]"
+            :key="i"
+            v-model:overrides="r.overrides"
+            :resource-name="resource.name"
+            :selected-template="selectedTemplate"
+            :global-variables="configuredVariables"
+            @remove="removeInstanceOfResource(resource.name, i)"
+          />
+          <button @click="addInstanceOfResource(resource.name)">
+            Add {{ resource.name }}
+          </button>
         </div>
       </template>
 
