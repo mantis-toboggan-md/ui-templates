@@ -2,23 +2,39 @@
 import Loading from '@shell/components/Loading';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import YamlEditor from '@shell/components/YamlEditor';
+import AsyncButton from '@shell/components/AsyncButton';
+import CreateEditView from '@shell/mixins/create-edit-view';
+import Banner from '@components/Banner/Banner.vue';
 
 import Variables from './Variables/index.vue';
 import { generateManifest } from '../utils/generate-manifest';
+
 export default {
   name: 'UITemplate',
+
+  mixins: [CreateEditView],
 
   components: {
     Variables,
     Loading,
     LabeledSelect,
-    YamlEditor
+    YamlEditor,
+    AsyncButton,
+    Banner
   },
 
   props: {
     resourceType: {
       type:    String,
       default: ''
+    },
+
+    // used to return to the same list view this creation process was initialized from
+    liveModel: {
+      type:    Object,
+      default: () => {
+        return {};
+      }
     },
   },
 
@@ -31,7 +47,13 @@ export default {
 
   data() {
     return {
-      errors: [], templates: [], selectedTemplate: null, configuredVariables: [], requestedResources: [], allVariablesValid: false, manifest: ''
+      errors:               [],
+      templates:            [],
+      selectedTemplate:     null,
+      configuredVariables:  [],
+      requestedResources:   [],
+      allVariablesValid:    false,
+      manifest:             '',
     };
   },
 
@@ -45,9 +67,21 @@ export default {
   },
 
   computed: {
+    doneLocationOverride() {
+      return this.liveModel.listLocation;
+    },
+
     availableTemplates() {
       return this.templates.filter((t) => t.targetTypes.includes(this.resourceType));
-    }
+    },
+
+    addableResources() {
+      if (!this.selectedTemplate) {
+        return [];
+      }
+
+      return (this.selectedTemplate.spec?.resources || []).filter((r) => r.max && r.max > r.min);
+    },
   },
 
   methods: {
@@ -70,8 +104,20 @@ export default {
       });
     },
 
-    updateValidation(e) {
-      this.allVariablesValid = e;
+    async saveManifest(cb) {
+      try {
+        const currentCluster = this.$store.getters['currentCluster'];
+
+        await currentCluster.doAction('apply', { yaml: this.manifest });
+
+        // eslint-disable-next-line node/no-callback-literal
+        cb(true);
+        this.done();
+      } catch (e) {
+        this.errors = [e];
+        // eslint-disable-next-line node/no-callback-literal
+        cb(false);
+      }
     }
   }
 };
@@ -81,18 +127,32 @@ export default {
 <template>
   <Loading v-if="$fetchState.pending" />
   <div v-else-if="manifest">
+    <Banner
+      v-for="error, i in errors"
+      :key="i"
+      color="error"
+    >
+      {{ error }}
+    </Banner>
     <YamlEditor
       ref="yaml-editor"
       class="yaml-editor mb-10"
       :value="manifest"
     />
     <button
-      class="btn role-primary"
+      class="btn role-secondary"
       @click="manifest=''"
     >
-      de-crunchatize me cap'n
+      go back
     </button>
+    <AsyncButton
+      class="btn role-primary"
+      @click="saveManifest"
+    >
+      apply yaml manifest
+    </AsyncButton>
   </div>
+
   <div v-else>
     <div class="row">
       <div class="col span-6">
@@ -105,11 +165,23 @@ export default {
       </div>
     </div>
     <div v-if="selectedTemplate">
+      <!-- GLOBAL VARIABLES -->
       <Variables
         v-model:value="configuredVariables"
         :uitemplate="selectedTemplate"
-        @validation-passed="updateValidation"
+        @validation-passed="e=>allVariablesValid=e"
       />
+
+      <!-- INDIVIDUAL RESOURCES POTENTIALLY WITH VARIABLE OVERRIDES -->
+      <template v-if="addableResources && addableResources.length">
+        <div
+          v-for="resource in addableResources"
+          :key="resource.name"
+        >
+          <button>Add {{ resource.name }}</button>
+        </div>
+      </template>
+
       <button
         class="btn role-primary"
         :disabled="!allVariablesValid"

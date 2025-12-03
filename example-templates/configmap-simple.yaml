@@ -7,7 +7,7 @@ spec:
   patches:
     - path: 'metadata.generateName'
       target: configmap
-      template: '{{variables.name}}-lalala-'
+      template: '{{variables.name}}-lalala-weee-'
   resources:
     - name: configmap
       k8s-type: configmap
@@ -18,7 +18,7 @@ spec:
         apiVersion: v1
         kind: ConfigMap
         metadata:
-          name: ''
+          generateName: ''
         data:
           foo: bar
           fizz: buzz
@@ -28,5 +28,5 @@ spec:
       required: true
       schema:
         openAPIV3Schema:
-          description: prefix to use with metadata.generateName
+          description: metadata.generateName
           type: string

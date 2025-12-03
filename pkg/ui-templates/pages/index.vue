@@ -233,6 +233,7 @@ export default {
     <UITemplate
       :mode="mode"
       :resource-type="resourceType"
+      :live-model="liveModel"
     />
   </div>
 </template>

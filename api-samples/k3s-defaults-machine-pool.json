@@ -1,0 +1,20 @@
+{
+    "instanceType": "t3a.medium",
+    "metadata": {
+        "annotations": {},
+        "generateName": "nc-nancy-default-k3s-pool1-",
+        "labels": {},
+        "namespace": "fleet-default",
+        "ownerReferences": []
+    },
+    "openPort": [],
+    "region": "us-west-2",
+    "securityGroup": [
+        "rancher-nodes"
+    ],
+    "securityGroupReadonly": false,
+    "subnetId": "subnet-02e4caf6f4ee75111",
+    "vpcId": "vpc-07cdd250a077f6773",
+    "zone": "a",
+    "type": "rke-machine-config.cattle.io.amazonec2config"
+}

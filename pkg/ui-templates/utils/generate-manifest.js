@@ -88,7 +88,7 @@ export const generateManifest = (store, uitemplate, variableConfiguration = [], 
   let out;
 
   try {
-    out = resourcesToPatch.map((r) => jsyaml.dump(r)).join('---\n');
+    out = resourcesToPatch.map((r) => jsyaml.dump(r.value)).join('\n---\n\n');
   } catch (e) {
     store.dispatch('notifications/add',
       {

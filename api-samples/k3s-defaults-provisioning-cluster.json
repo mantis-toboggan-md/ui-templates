@@ -1,0 +1,101 @@
+{
+    "type": "provisioning.cattle.io.cluster",
+    "metadata": {
+        "namespace": "fleet-default",
+        "name": "REPLACE_ME"
+    },
+    "spec": {
+        "rkeConfig": {
+            "chartValues": {},
+            "upgradeStrategy": {
+                "controlPlaneConcurrency": "1",
+                "controlPlaneDrainOptions": {
+                    "deleteEmptyDirData": true,
+                    "disableEviction": false,
+                    "enabled": false,
+                    "force": false,
+                    "gracePeriod": -1,
+                    "ignoreDaemonSets": true,
+                    "skipWaitForDeleteTimeoutSeconds": 0,
+                    "timeout": 120
+                },
+                "workerConcurrency": "1",
+                "workerDrainOptions": {
+                    "deleteEmptyDirData": true,
+                    "disableEviction": false,
+                    "enabled": false,
+                    "force": false,
+                    "gracePeriod": -1,
+                    "ignoreDaemonSets": true,
+                    "skipWaitForDeleteTimeoutSeconds": 0,
+                    "timeout": 120
+                }
+            },
+            "dataDirectories": {
+                "systemAgent": "",
+                "provisioning": "",
+                "k8sDistro": ""
+            },
+            "machineGlobalConfig": {
+                "disable-cloud-controller": false,
+                "disable-kube-proxy": false,
+                "disable-scheduler": false,
+                "etcd-expose-metrics": false,
+                "disable-apiserver": false,
+                "disable-controller-manager": false,
+                "disable-etcd": false,
+                "disable-network-policy": false,
+                "etcd-s3-bucket-lookup-type": "auto",
+                "secrets-encryption": false,
+                "secrets-encryption-provider": "aescbc"
+            },
+            "machineSelectorConfig": [
+                {
+                    "config": {
+                        "protect-kernel-defaults": false,
+                        "selinux": false,
+                        "docker": false
+                    }
+                }
+            ],
+            "etcd": {
+                "disableSnapshots": false,
+                "s3": null,
+                "snapshotRetention": 5,
+                "snapshotScheduleCron": "0 */5 * * *"
+            },
+            "registries": {
+                "configs": {},
+                "mirrors": {}
+            },
+            "machinePools": [
+                {
+                    "name": "pool1",
+                    "etcdRole": true,
+                    "controlPlaneRole": true,
+                    "workerRole": true,
+                    "hostnamePrefix": "",
+                    "labels": {},
+                    "quantity": 1,
+                    "unhealthyNodeTimeout": "0m",
+                    "machineConfigRef": {
+                        "kind": "Amazonec2Config",
+                        "name": "REPLACE_ME"
+                    },
+                    "drainBeforeDelete": true
+                }
+            ]
+        },
+        "machineSelectorConfig": [
+            {
+                "config": {}
+            }
+        ],
+        "kubernetesVersion": "REPLACE_ME",
+        "defaultPodSecurityAdmissionConfigurationTemplateName": "",
+        "localClusterAuthEndpoint": {
+            "enabled": false
+        },
+        "cloudCredentialSecretName": "REPLACE_ME"
+    }
+}
