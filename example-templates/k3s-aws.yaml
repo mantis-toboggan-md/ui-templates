@@ -119,6 +119,12 @@ spec:
         vpcId: REPLACE_ME
         zone: REPLACE_ME
         type: rke-machine-config.cattle.io.amazonec2config
+  resourceDefaults:
+    - name: machinePool
+      overrides:
+      - name: name
+        value: test-value-please-ignore
+    - name: cluster
   variables:
     - metadata:
       name: name

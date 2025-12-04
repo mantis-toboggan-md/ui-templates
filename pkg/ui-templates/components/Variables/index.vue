@@ -422,7 +422,7 @@ export default {
             <i
               class="icon text-primary"
               :class="{'icon-chevron-down': expanded, 'icon-chevron-up':!expanded}"
-            />{{ t('capi.cluster.variables.overrideDefaults') }}
+            />Override Defaults
           </h4>
         </div>
         <div

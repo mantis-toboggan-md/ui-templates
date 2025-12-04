@@ -168,7 +168,7 @@ export default {
             rel="noopener noreferrer nofollow"
           >
 
-            <t k="capi.cluster.variables.learnMore" /> <i class="icon-external-link icon-sm" />
+            Learn More <i class="icon-external-link icon-sm" />
           </a>
         </div>
       </div>

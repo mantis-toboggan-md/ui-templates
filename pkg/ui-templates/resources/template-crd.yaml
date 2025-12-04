@@ -19,8 +19,8 @@ spec:
                   type: array
                   items:
                     description: |-
-                      ClusterClassVariable defines a variable which can
-                      be configured in the Cluster topology and used in patches.
+                      Variable defines a variable which can
+                      be configured and used in patches to modify resources
                     properties:
                       metadata:
                         description: >-
@@ -423,6 +423,29 @@ spec:
                       template:
                         description: Patch to be applied at the specified path. This field accepts handlebars templates. 
                         type: string
+                resourceDefaults:
+                  type: array
+                  description: |- 
+                    Optional default configuration of resources and their overrides. Every resource here must be defined in spec.resources. When a template is used the form will be initialized with these resources present; however,
+                    users may add/remove/modify them within the constraints set by spec.resources[].min and spec.resources[].max
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        description: This value should correspond to some spec.resources[].name
+                      overrides:
+                        type: array
+                        description: List of variable override values. Only variables listed in spec.resources[].overrides will have an effect
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              description: name of variable to be overriden
+                            value: 
+                              x-kubernetes-preserve-unknown-fields: true
+
   scope: Namespaced
   names:
     plural: templates

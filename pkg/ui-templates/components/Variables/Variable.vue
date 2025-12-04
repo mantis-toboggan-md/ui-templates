@@ -93,7 +93,7 @@ export default {
 
   data() {
     return {
-      noneOption: this.t('capi.cluster.variables.emptyStringOption'), annotationError: '', yamlPlaceholder: ''
+      noneOption: 'None', annotationError: '', yamlPlaceholder: ''
     };
   },
 

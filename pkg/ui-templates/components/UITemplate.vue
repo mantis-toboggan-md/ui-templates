@@ -92,21 +92,28 @@ export default {
     },
 
     initializeResourceRequests() {
-      const resources = this.selectedTemplate?.spec?.resources || [];
+      // const resources = this.selectedTemplate?.spec?.resources || [];
+      const resourceDefaults = this.selectedTemplate?.spec?.resourceDefaults || [];
 
-      resources.forEach((r) => {
-        if (r.min > 0) {
-          let i = 0;
+      // resources.forEach((r) => {
+      //   if (r.min > 0) {
+      //     let i = 0;
 
-          while (i < r.min) {
-            // this.requestedResources.push({ name: r.name, overrides: [] });
-            if (!this.requestedResources[r.name]) {
-              this.requestedResources[r.name] = [];
-            }
-            this.requestedResources[r.name].push({ overrides: [] });
-            i++;
-          }
+      //     while (i < r.min) {
+      //       if (!this.requestedResources[r.name]) {
+      //         this.requestedResources[r.name] = [];
+      //       }
+      //       this.requestedResources[r.name].push({ overrides: [] });
+      //       i++;
+      //     }
+      //   }
+      // });
+
+      resourceDefaults.forEach((r) => {
+        if (!this.requestedResources[r.name]) {
+          this.requestedResources[r.name] = [];
         }
+        this.requestedResources[r.name].push({ overrides: r.overrides || [] });
       });
     },
 
@@ -136,7 +143,19 @@ export default {
         // eslint-disable-next-line node/no-callback-literal
         cb(false);
       }
-    }
+    },
+
+    createNewTemplate() {
+      this.$store.dispatch('management/promptModal', {
+        component:      'CreateTemplateDialog',
+        componentProps: {
+          uitemplate:            this.selectedTemplate,
+          variableConfiguration: this.configuredVariables,
+          resourceConfiguration:     this.requestedResources,
+          doneLocation:          this.doneLocationOverride
+        }
+      });
+    },
   }
 };
 
@@ -217,6 +236,13 @@ export default {
         @click="generate"
       >
         crunchatize me cap'n
+      </button>
+
+      <button
+        class="btn role-primary"
+        @click="createNewTemplate"
+      >
+        create a new template with these values
       </button>
     </div>
     <div v-else>
