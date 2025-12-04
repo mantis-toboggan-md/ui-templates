@@ -49,7 +49,10 @@ export default {
       :global-variables="globalVariables"
       @update:value="e=>$emit('update:overrides', e)"
     />
-    <button @click="$emit('remove')">
+    <button
+      class="btn btn-sm role-tertiary"
+      @click="$emit('remove')"
+    >
       remove
     </button>
   </div>

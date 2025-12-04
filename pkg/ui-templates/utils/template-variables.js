@@ -9,16 +9,18 @@ import YamlEditor from '@shell/components/YamlEditor.vue';
 import ToggleSwitch from '@components/Form/ToggleSwitch/ToggleSwitch.vue';
 import ResourceVariable from '../components/Variables/ResourceVariable.vue';
 import { ANNOTATIONS } from '../labels-annotations.js';
+import { defineAsyncComponent } from 'vue';
 
 export const VARIABLE_INPUT_NAMES = {
-  TEXT:           'text-var',
-  BOOL:        'checkbox-var',
+  TEXT:             'text-var',
+  BOOL:             'checkbox-var',
   BOOL_TOGGLE:       'toggle-var',
-  MAP:         'keyvalue-var',
-  MAP_YAML:    'keyvalue-yaml-var',
-  ARRAY:          'arraylist-var',
-  YAML:           'yamleditor-var',
-  SEARCH_TYPE: 'resourcevariable-var'
+  MAP:              'keyvalue-var',
+  MAP_YAML:         'keyvalue-yaml-var',
+  ARRAY:            'arraylist-var',
+  YAML:             'yamleditor-var',
+  SEARCH_TYPE:      'resourcevariable-var',
+  CUSTOM_COMPONENT: 'customcomponent-var'
 };
 
 // types that do not require an additional schema definition
@@ -26,7 +28,7 @@ export const SIMPLE_TYPES = ['string', 'int', 'boolean'];
 
 /**
  *
- * @param variable  <clusterclass>.spec.variables[]
+ * @param variable  <template>.spec.variables[]
  * @param all variables[]
  * @returns bool true if a variable in all has a toggle annotation that includes this variable's name
  */
@@ -46,14 +48,27 @@ const isResourceVariable = (variable) => {
   return properties?.name && properties?.name?.type === 'string' && !Object.keys(properties).find((p) => p !== 'name' && p !== 'namespace');
 };
 
+const variableCustomComponent = (variable, ctx) => {
+  if (!variable?.metadata?.annotations?.[ANNOTATIONS.DASHBAORD_COMPONENT]) {
+    return false;
+  }
+  try {
+    const componentName = variable.metadata.annotations[ANNOTATIONS.DASHBAORD_COMPONENT];
+
+    return ctx.$plugin?.getDynamic('formatters', componentName);
+  } catch {
+    return false;
+  }
+};
+
 /**
  * Accepts a clusterclass variable schema and determines which input component would best represent that variable
  * The 'name' field of the output is used by the component containing all variable inputs, to position inputs dependent on their type
- * @param variable <clusterclass>.spec.variables[]
+ * @param variable <template>.spec.variables[]
  * @param all variables[] (optional - used to decide whether or not is toggle)
  * @returns /{component: <input component>, name: string name of input component}
  */
-export const componentForType = (variable, all) => {
+export const componentForType = (variable, all, ctx) => {
   let out;
   const schema = variable?.schema?.openAPIV3Schema || {};
   let { type } = schema;
@@ -64,8 +79,12 @@ export const componentForType = (variable, all) => {
     type = 'map';
   }
 
+  const customComponent = variableCustomComponent(variable, ctx);
+
   if (hasEnum) {
     out = { component: LabeledSelect, name: VARIABLE_INPUT_NAMES.TEXT };
+  } else if (customComponent) {
+    out = { component: defineAsyncComponent(customComponent), name: VARIABLE_INPUT_NAMES.CUSTOM_COMPONENT };
   } else {
     switch (type) {
     case 'object':

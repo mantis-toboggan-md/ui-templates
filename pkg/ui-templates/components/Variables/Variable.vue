@@ -170,7 +170,7 @@ export default {
      */
 
     componentForType() {
-      return componentForType(this.variable, this.allDefinitions);
+      return componentForType(this.variable, this.allDefinitions, this);
     },
 
     isListComponent() {

@@ -126,8 +126,16 @@ spec:
         value: test-value-please-ignore
     - name: cluster
   variables:
+    - name: name
+      required: true
+      schema:
+        openAPIV3Schema:
+          description: metadata.name
+          type: string
     - metadata:
-      name: name
+        annotations:
+          toboggan.md/component: 'TemplateNamespace'
+      name: namescape
       required: true
       schema:
         openAPIV3Schema:

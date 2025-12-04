@@ -56,6 +56,8 @@ export default {
       requestedResources:   {},
       allVariablesValid:    false,
       manifest:             '',
+      hidePopulated:        false, // TODO nb
+      hideOptional:         false // TODO nb
     };
   },
 
@@ -92,22 +94,7 @@ export default {
     },
 
     initializeResourceRequests() {
-      // const resources = this.selectedTemplate?.spec?.resources || [];
       const resourceDefaults = this.selectedTemplate?.spec?.resourceDefaults || [];
-
-      // resources.forEach((r) => {
-      //   if (r.min > 0) {
-      //     let i = 0;
-
-      //     while (i < r.min) {
-      //       if (!this.requestedResources[r.name]) {
-      //         this.requestedResources[r.name] = [];
-      //       }
-      //       this.requestedResources[r.name].push({ overrides: [] });
-      //       i++;
-      //     }
-      //   }
-      // });
 
       resourceDefaults.forEach((r) => {
         if (!this.requestedResources[r.name]) {
@@ -206,6 +193,8 @@ export default {
       <Variables
         v-model:value="configuredVariables"
         :uitemplate="selectedTemplate"
+        :hide-populated="hidePopulated"
+        :hide-optional="hideOptional"
         @validation-passed="e=>allVariablesValid=e"
       />
 
@@ -222,9 +211,14 @@ export default {
             :resource-name="resource.name"
             :selected-template="selectedTemplate"
             :global-variables="configuredVariables"
+            :hide-populated="hidePopulated"
+            :hide-optional="hideOptional"
             @remove="removeInstanceOfResource(resource.name, i)"
           />
-          <button @click="addInstanceOfResource(resource.name)">
+          <button
+            class="btn btn-sm role-primary"
+            @click="addInstanceOfResource(resource.name)"
+          >
             Add {{ resource.name }}
           </button>
         </div>
