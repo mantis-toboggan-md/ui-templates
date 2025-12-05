@@ -1,8 +1,10 @@
 import { NotificationLevel } from '@shell/types/notifications';
 import * as jsyaml from 'js-yaml';
 import Handlebars from 'handlebars';
-import { set } from '@shell/utils/object';
+import { get, set } from '@shell/utils/object';
 import cloneDeep from 'lodash/cloneDeep';
+import { patch } from 'semver';
+import { isArray } from 'lodash';
 
 /**
  * Generate YAML manifest using template and variable configuration
@@ -44,7 +46,7 @@ export const generateManifest = (store, uitemplate, variableConfiguration = [], 
    * Constructing patch values should use variableConfiguration, with the relevant resources requestedResources.overrides overwriting variableConfiguration values of the same name
    * for each patch in the template, apply to each requestedResources that matches the target of that patch
    */
-  const constructPatchValue = (p = {}, variableConfigs = []) => {
+  const constructPatchValue = (p = {}, variableConfigs = [], iterateConfig = {}) => {
     const templateContext = variableConfigs.reduce((all, v) => {
       all[v.name] = v.value;
 
@@ -52,7 +54,15 @@ export const generateManifest = (store, uitemplate, variableConfiguration = [], 
     }, {});
     const patchTemplate = Handlebars.compile(p.template);
 
-    return patchTemplate({ variables: templateContext });
+    const patchedValue = patchTemplate({ variables: templateContext, iterate: iterateConfig });
+
+    try {
+      const objectified = jsyaml.load(patchedValue);
+
+      return objectified;
+    } catch {
+      return patchedValue;
+    }
   };
 
   Object.keys(requestedResources).forEach( (resourceName) => {
@@ -64,28 +74,86 @@ export const generateManifest = (store, uitemplate, variableConfiguration = [], 
   });
 
   patches.forEach((p = {}) => {
-    const { target } = p;
+    const { target, op = 'replace', iterate } = p;
 
     if (!target) {
       return;
     }
 
-    const targetResources = requestedResources[target];
+    if (iterate) {
+      // for each resourceConfiguration matching iterate, generate and apply patch
+      const resourcesToIterateThrough = requestedResources[iterate] || [];
 
-    targetResources.forEach((r) => {
-      const objectToBePatched = r.objectToBePatched;
+      if (resourcesToIterateThrough.length) {
+        resourcesToIterateThrough.forEach((iteratedResource, idx) => {
+          const iterateResourceConfiguration = iteratedResource.objectToBePatched || {};
+          const iterateResourceOverrides = iteratedResource.overrides || [];
+          const overriddenIterateNames = iterateResourceOverrides.map((o) => o.name);
+          const relevantGlobalIterateVariables = variableConfiguration.filter((v) => !overriddenIterateNames.includes(v.name));
 
-      const overrides = r.overrides || [];
+          const allIterateVariables = [...relevantGlobalIterateVariables, ...iterateResourceOverrides];
 
-      const overriddenNames = overrides.map((o) => o.name);
+          const iterateVariablesForTemplateContext = allIterateVariables.reduce((all, v) => {
+            all[v.name] = v.value;
 
-      const relevantGlobalVariables = variableConfiguration.filter((v) => !overriddenNames.includes(v.name));
+            return all;
+          }, {});
 
-      const patchValue = constructPatchValue(p, [...relevantGlobalVariables, ...overrides]);
+          debugger;
+          const iterateConfig = {
+            resource:  iterateResourceConfiguration,
+            overrides: iterateVariablesForTemplateContext,
+            index:     idx
+          };
 
-      set(objectToBePatched, p.path, patchValue);
-    });
+          // get other variables
+          // do patch
+          const targetResources = requestedResources[target];
+
+          targetResources.forEach((r) => {
+            const objectToBePatched = r.objectToBePatched;
+
+            const overrides = r.overrides || [];
+
+            const overriddenNames = overrides.map((o) => o.name);
+
+            const relevantGlobalVariables = variableConfiguration.filter((v) => !overriddenNames.includes(v.name));
+
+            const patchValue = constructPatchValue(p, [...relevantGlobalVariables, ...overrides], iterateConfig);
+
+            if (op === 'append') {
+              const currentVal = get(objectToBePatched, p.path);
+
+              if (!isArray(currentVal)) {
+                set(objectToBePatched, p.path, [patchValue]);
+              } else {
+                currentVal.push(patchValue);
+              }
+            } else {
+              set(objectToBePatched, p.path, patchValue);
+            }
+          });
+        });
+      }
+    } else {
+      const targetResources = requestedResources[target];
+
+      targetResources.forEach((r) => {
+        const objectToBePatched = r.objectToBePatched;
+
+        const overrides = r.overrides || [];
+
+        const overriddenNames = overrides.map((o) => o.name);
+
+        const relevantGlobalVariables = variableConfiguration.filter((v) => !overriddenNames.includes(v.name));
+
+        const patchValue = constructPatchValue(p, [...relevantGlobalVariables, ...overrides]);
+
+        set(objectToBePatched, p.path, patchValue);
+      });
+    }
   });
+
   let out;
 
   // finally, yamlize all resources and combine them into one yaml manifest

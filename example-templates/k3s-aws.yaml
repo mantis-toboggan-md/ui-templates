@@ -16,7 +16,7 @@ spec:
       path: 'spec.rkeConfig.machinePools'
       target: cluster
       template: |-
-        name: {{iterate.resource.name}}
+        name: {{iterate.overrides.poolName}}
         etcdRole: {{iterate.overrides.etcdRole}}
         controlPlaneRole: {{iterate.overrides.controlPlaneRole}}
         workerRole: {{iterate.overrides.workerRole}}
@@ -26,7 +26,7 @@ spec:
         unhealthyNodeTimeout: 0m
         machineConfigRef:
           kind: Amazonec2Config
-          name: {{iterate.resource.name}}
+          name: {{iterate.resource.metadata.name}}
         drainBeforeDelete: true
   resources:
     - name: cluster
@@ -94,19 +94,6 @@ spec:
             registries:
               configs: {}
               mirrors: {}
-            machinePools:
-              - name: pool1
-                etcdRole: true
-                controlPlaneRole: true
-                workerRole: true
-                hostnamePrefix: ''
-                labels: {}
-                quantity: 1
-                unhealthyNodeTimeout: 0m
-                machineConfigRef:
-                  kind: Amazonec2Config
-                  name: REPLACE_ME
-                drainBeforeDelete: true
           machineSelectorConfig:
             - config: {}
           kubernetesVersion: REPLACE_ME
@@ -132,13 +119,13 @@ spec:
       - workerRole
       - quantity
       template: |-
+        kind: Amazonec2Config
+        apiVersion: rke-machine-config.cattle.io/v1
         instanceType: t3a.medium
         metadata:
           annotations: {}
-          generateName: test
           labels: {}
           namespace: fleet-default
-          ownerReferences: []
         openPort: []
         region: us-west-2
         securityGroup:
@@ -148,8 +135,7 @@ spec:
         vpcId: vpc-07cdd250a077f6773
         zone: a
         type: rke-machine-config.cattle.io.amazonec2config
-        kind: Amazonec2Config
-        apiVersion: rke-machine-config.cattle.io/v1
+
   resourceDefaults:
     - name: machinePool
       overrides:

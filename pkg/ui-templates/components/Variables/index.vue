@@ -51,18 +51,6 @@ export default {
       default: ''
     },
 
-    // // pool or deployment
-    // machineClassType: {
-    //   type:    String,
-    //   default: null
-    // },
-
-    // // if this and class type are provided, only variables associated with a jsonPatch that lists matchResources.<machineClassType>.<this class> will be shown
-    // machineClassName: {
-    //   type:    String,
-    //   default: null
-    // },
-
     // used in machine context to display the global value as a placeholder
     globalVariables: {
       type:    Array,
@@ -130,7 +118,7 @@ export default {
       return this.value.filter((v) => this.ownedVariableNames.includes(v.name));
     },
 
-    // is  the component being used for top  level cluster variables or machine overrides?
+    // is  the component being used for top  level variables or resource level/overrides?
     isResourceScoped() {
       return !!this.resourceScope;
     },
@@ -138,36 +126,23 @@ export default {
     // if not machine scoped, scope using section prop
     // if neither machine scoped nor section scoped show all variables that are not section scoped
     variableDefinitions() {
-      const allVariableDefinitions = this.uitemplate?.spec?.variables || [];
+      const globalVariableDefinitions = this.uitemplate?.spec?.variables || [];
 
       if (!this.isResourceScoped) {
         // variables with annotation matching this section
         if (this.section) {
-          return allVariableDefinitions.filter((v) => (v?.metadata?.annotations?.[ANNOTATIONS.SECTION] || '').toLowerCase() === this.section);
+          return globalVariableDefinitions.filter((v) => (v?.metadata?.annotations?.[ANNOTATIONS.SECTION] || '').toLowerCase() === this.section);
           // if this component doesn't have section prop show all variables without section prop
           // and all variables with a section prop that does not match the list  shown in ClusterConfig (FORM_SECTIONS)
         } else {
-          return allVariableDefinitions.filter((v) => !Object.values(FORM_SECTIONS).includes((v?.metadata?.annotations?.[ANNOTATIONS.SECTION] || '').toLowerCase()) || !v?.metadata?.annotations?.[ANNOTATIONS.SECTION]);
+          return globalVariableDefinitions.filter((v) => !Object.values(FORM_SECTIONS).includes((v?.metadata?.annotations?.[ANNOTATIONS.SECTION] || '').toLowerCase()) || !v?.metadata?.annotations?.[ANNOTATIONS.SECTION]);
         }
       }
-      // const variableNames = this.resourceScopedVariableNames.reduce((names, patch) => {
-      //   const valueFromVariable = patch?.valueFrom?.variable;
 
-      //   if (!valueFromVariable) {
-      //     return names;
-      //   }
+      const resourceDef = (this.uitemplate?.spec?.resources || []).find((r) => r.name === this.resourceScope);
+      const resourceScopedVariables = resourceDef.variables || [];
 
-      //   // the value here could be a field or index of the variable, defined <variable definition.name>.<some field> or <variable definition name>[i]
-      //   const parsedName = valueFromVariable.split(/\.|\[/)[0];
-
-      //   if (parsedName !== 'builtin') {
-      //     names.push(parsedName);
-      //   }
-
-      //   return names;
-      // }, []);
-
-      return allVariableDefinitions.filter((v) => this.resourceScopedVariableNames.includes(v.name));
+      return [...globalVariableDefinitions.filter((v) => this.resourceVariableOverrideNames.includes(v.name)), ...resourceScopedVariables];
     },
 
     // group variables by section
@@ -177,7 +152,7 @@ export default {
       const out = { };
 
       this.variableDefinitions.forEach((spec) => {
-        const section = spec?.metadata?.annotations?.[ANNOTATIONS.SECTION] || 'misc';
+        const section = spec?.metadata?.annotations?.[ANNOTATIONS.SECTION] || 'General';
 
         if (!out[section]) {
           out[section] = [spec];
@@ -233,7 +208,7 @@ export default {
       return out;
     },
 
-    resourceScopedVariableNames() {
+    resourceVariableOverrideNames() {
       if (!this.isResourceScoped) {
         return [];
       }
@@ -270,6 +245,10 @@ export default {
       const out = [...this.ownedVariables].reduce((acc, existingVar) => {
         const neuDef = (neu || []).find((n) => n.name === existingVar.name);
 
+        if (this.isResourceScoped && neuDef.schema?.openAPIV3Schema?.type !== 'boolean') {
+          return acc;
+        }
+
         // do not include variables not defined in the new cluster class
         if (!neuDef) {
           return acc;
@@ -301,6 +280,9 @@ export default {
       neu.forEach((def) => {
         let newDefault = def.schema?.openAPIV3Schema?.default;
 
+        if (this.isResourceScoped && def.schema?.openAPIV3Schema?.type !== 'boolean') {
+          return;
+        }
         if (def.schema?.openAPIV3Schema?.type === 'boolean' && !newDefault) {
           newDefault = false;
         }
@@ -364,7 +346,7 @@ export default {
                   :value="valueFor(variableDef)"
                   :is-machine-scoped="isResourceScoped"
                   :global-variables="globalVariables"
-                  :validate-required="!machineDeploymentClass && !machinePoolClass"
+                  :validate-required="!isResourceScoped"
                   :cluster-namespace="clusterNamespace"
                   @update:value="e=>updateVariables(e, variableDef)"
                   @validation-passed="updateErrors"
