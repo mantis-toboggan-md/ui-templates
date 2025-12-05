@@ -9,6 +9,7 @@ import Banner from '@components/Banner/Banner.vue';
 import Variables from './Variables/index.vue';
 import UITemplateSubResource from './UITemplateSubResource.vue';
 import { generateManifest } from '../utils/generate-manifest';
+import { MANAGEMENT } from '@shell/config/types';
 
 export default {
   name: 'UITemplate',
@@ -118,7 +119,11 @@ export default {
 
     async saveManifest(cb) {
       try {
-        const currentCluster = this.$store.getters['currentCluster'];
+        let currentCluster = this.$store.getters['currentCluster'];
+
+        if (!currentCluster) {
+          currentCluster = await this.$store.dispatch('management/find', { type: MANAGEMENT.CLUSTER, id: 'local' });
+        }
 
         await currentCluster.doAction('apply', { yaml: this.manifest });
 

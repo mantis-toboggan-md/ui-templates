@@ -103,7 +103,7 @@ export default {
     },
 
     displayName() {
-      return this.$store.getters['i18n/withFallback'](`capi.variables.${ this.variableDef.name }`, null, this.variableDef.name);
+      return this.variableDef?.metadata?.annotations?.[ANNOTATIONS.LABEL] || this.$store.getters['i18n/withFallback'](`capi.variables.${ this.variableDef.name }`, null, this.variableDef.name);
     },
 
     required() {

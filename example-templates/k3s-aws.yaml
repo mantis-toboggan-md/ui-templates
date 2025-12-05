@@ -10,7 +10,24 @@ spec:
       template: '{{variables.name}}'
     - path: 'metadata.name'
       target: machinePool
-      template: '{{variables.name}}'
+      template: '{{variables.name}}-{{variables.poolName}}'
+    - iterate: machinePool
+      op: append
+      path: 'spec.rkeConfig.machinePools'
+      target: cluster
+      template: |-
+        name: {{iterate.resource.name}}
+        etcdRole: {{iterate.overrides.etcdRole}}
+        controlPlaneRole: {{iterate.overrides.controlPlaneRole}}
+        workerRole: {{iterate.overrides.workerRole}}
+        hostnamePrefix: ''
+        labels: {}
+        quantity: {{iterate.overrides.quantity}}
+        unhealthyNodeTimeout: 0m
+        machineConfigRef:
+          kind: Amazonec2Config
+          name: {{iterate.resource.name}}
+        drainBeforeDelete: true
   resources:
     - name: cluster
       k8s-type: provisioning.cattle.io.cluster
@@ -19,6 +36,8 @@ spec:
       required: true
       template: |-
         type: provisioning.cattle.io.cluster
+        kind: Cluster
+        apiVersion: provisioning.cattle.io/v1
         metadata:
           namespace: fleet-default
           name: REPLACE_ME
@@ -100,25 +119,37 @@ spec:
       min: 1
       max: 9999
       required: true
+      variables:
+      - name: poolName
+        required: true
+        schema:
+          openAPIV3Schema:
+            description: Name of the machine pool. This will be combined with the name of the cluster to ensure all pools have names unique within the Rancher instance.
+            type: string
       overrides:
-      - 'name'
+      - etcdRole
+      - controlPlaneRole
+      - workerRole
+      - quantity
       template: |-
         instanceType: t3a.medium
         metadata:
           annotations: {}
-          generateName: REPLACE_ME
+          generateName: test
           labels: {}
           namespace: fleet-default
           ownerReferences: []
         openPort: []
-        region: REPLACE_ME
+        region: us-west-2
         securityGroup:
           - rancher-nodes
         securityGroupReadonly: false
-        subnetId: REPLACE_ME
-        vpcId: REPLACE_ME
-        zone: REPLACE_ME
+        subnetId: subnet-02e4caf6f4ee75111
+        vpcId: vpc-07cdd250a077f6773
+        zone: a
         type: rke-machine-config.cattle.io.amazonec2config
+        kind: Amazonec2Config
+        apiVersion: rke-machine-config.cattle.io/v1
   resourceDefaults:
     - name: machinePool
       overrides:
@@ -126,18 +157,64 @@ spec:
         value: test-value-please-ignore
     - name: cluster
   variables:
+    - metadata:
+        annotations:
+          toboggan.md/component: 'TemplateCloudCredentialAws'
+      name: cloudCredential
+      required: true
+      schema:
+        openAPIV3Schema:
+          description: Rancher cloud credentials allow your Rancher server to communicate with and request compute resources from Amazon Web Services. 
+          type: string
     - name: name
       required: true
       schema:
         openAPIV3Schema:
           description: metadata.name
           type: string
-    - metadata:
+    - name: clustermembership
+      metadata:
         annotations:
-          toboggan.md/component: 'TemplateNamespace'
-      name: namescape
+          toboggan.md/component: TemplateClusterMembership
+          toboggan.md/section: Cluster Membership
+      required: false
+      schema:
+        openAPIV3Schema:
+          type: string
+    - name: etcdRole
+      metadata:
+        annotations:
+          toboggan.md/section: Machine Pools
       required: true
       schema:
         openAPIV3Schema:
-          description: metadata.name
-          type: string
+          type: boolean
+          default: true
+    - name: controlPlaneRole
+      metadata:
+        annotations:
+          toboggan.md/section: Machine Pools
+      required: true
+      schema:
+        openAPIV3Schema:
+          type: boolean
+          default: true
+    - name: workerRole
+      metadata:
+        annotations:
+          toboggan.md/section: Machine Pools
+      required: true
+      schema:
+        openAPIV3Schema:
+          type: boolean
+          default: true
+    - name: quantity
+      metadata:
+        annotations:
+          toboggan.md/section: Machine Pools
+      required: true
+      schema:
+        openAPIV3Schema:
+          type: integer
+          default: 1
+          

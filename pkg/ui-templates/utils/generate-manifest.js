@@ -38,12 +38,12 @@ export const generateManifest = (store, uitemplate, variableConfiguration = [], 
       );
     }
   });
+
   /**
    *
    * Constructing patch values should use variableConfiguration, with the relevant resources requestedResources.overrides overwriting variableConfiguration values of the same name
    * for each patch in the template, apply to each requestedResources that matches the target of that patch
    */
-
   const constructPatchValue = (p = {}, variableConfigs = []) => {
     const templateContext = variableConfigs.reduce((all, v) => {
       all[v.name] = v.value;
@@ -62,6 +62,7 @@ export const generateManifest = (store, uitemplate, variableConfiguration = [], 
       r.objectToBePatched = cloneDeep(defaultTemplate);
     });
   });
+
   patches.forEach((p = {}) => {
     const { target } = p;
 
@@ -87,6 +88,7 @@ export const generateManifest = (store, uitemplate, variableConfiguration = [], 
   });
   let out;
 
+  // finally, yamlize all resources and combine them into one yaml manifest
   try {
     const allResourcesToSave = Object.keys(requestedResources).reduce((all, resourceName) => {
       all.push(...requestedResources[resourceName].map((r) => r.objectToBePatched));

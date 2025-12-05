@@ -185,6 +185,10 @@ export default {
       return this.isListComponent && this.schema?.additionalProperties?.properties;
     },
 
+    isCustomComponent() {
+      return this.componentForType?.name === VARIABLE_INPUT_NAMES.CUSTOM_COMPONENT;
+    },
+
     /**
      * Compute how to display variable
      * 2-per-row or full row
@@ -194,7 +198,7 @@ export default {
     displayClasses() {
       const out = {
         wider:  this.isListComponent,
-        widest: this.isYamlKeyValueComponent || this.isYamlComponent || this.highlighted || this.isSearchComponent,
+        widest: this.isYamlKeyValueComponent || this.isYamlComponent || this.highlighted || this.isSearchComponent || this.isCustomComponent,
       };
 
       const toggleLabels = (this.variable?.metadata?.annotations?.[ANNOTATIONS.TOGGLED_BY] || '').split(',').map((n) => n.replace(' ', ''));
@@ -250,7 +254,7 @@ export default {
     },
 
     label() {
-      return this.variable?.metadata?.annotations?.[ANNOTATIONS.LABEL] || this.variable.name;
+      return !this.isCustomComponent ? this.variable?.metadata?.annotations?.[ANNOTATIONS.LABEL] || this.variable.name : '';
     },
 
     highlighted() {
