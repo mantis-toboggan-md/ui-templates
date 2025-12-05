@@ -31,9 +31,9 @@ export default {
       default: () => null
     },
 
-    //  if the component is being used in a machine pool use the global variable value as placeholder
+    //  if the component is being used as a resource override use the global variable value as placeholder
     // and do not validate required fields (the field will be validated as required at global level)
-    isMachineScoped: {
+    isResourceOverride: {
       type:    Boolean,
       default: false
     },
@@ -132,7 +132,7 @@ export default {
 
       const required = this.variable?.required;
 
-      if (required && !this.isMachineScoped) {
+      if (required && !this.isResourceOverride) {
         out.push((val) => !isDefined(val) ? t('validation.required', { key: this.variable.name }) : undefined);
       }
 
@@ -189,6 +189,10 @@ export default {
       return this.componentForType?.name === VARIABLE_INPUT_NAMES.CUSTOM_COMPONENT;
     },
 
+    isWiderCustomComponent() {
+      return this.isCustomComponent && this.variable?.metadata?.annotations?.[ANNOTATIONS.WIDEST];
+    },
+
     /**
      * Compute how to display variable
      * 2-per-row or full row
@@ -198,7 +202,7 @@ export default {
     displayClasses() {
       const out = {
         wider:  this.isListComponent,
-        widest: this.isYamlKeyValueComponent || this.isYamlComponent || this.highlighted || this.isSearchComponent || this.isCustomComponent,
+        widest: this.isYamlKeyValueComponent || this.isYamlComponent || this.highlighted || this.isSearchComponent || this.isWiderCustomComponent,
       };
 
       const toggleLabels = (this.variable?.metadata?.annotations?.[ANNOTATIONS.TOGGLED_BY] || '').split(',').map((n) => n.replace(' ', ''));
@@ -216,7 +220,7 @@ export default {
     // if machine variable, use global value as placeholder
     // otherwise use cluster class's variable definition
     placeholder() {
-      if (this.isMachineScoped) {
+      if (this.isResourceOverride) {
         const globvalValue = this.globalVariables.find((v) => v.name === this.variable.name)?.value;
 
         if (globvalValue) {
@@ -258,7 +262,7 @@ export default {
     },
 
     highlighted() {
-      return !!this.variable?.metadata?.annotations?.[ANNOTATIONS.HIGHLIGHT] && !this.isMachineScoped;
+      return !!this.variable?.metadata?.annotations?.[ANNOTATIONS.HIGHLIGHT] && !this.isResourceOverride;
     },
 
     isSearchComponent() {
@@ -367,7 +371,7 @@ export default {
     }"
   >
     <VariableHighlight
-      :is-machine-scoped="isMachineScoped"
+      :is-machine-scoped="isResourceOverride"
       :mode="mode"
       :variable-def="variable"
       :variable-value="value"
@@ -398,7 +402,7 @@ export default {
           :placeholder="placeholder"
           :tooltip="tooltip"
           :status="annotationError ? 'warning' : null"
-          :required="variable.required && !isMachineScoped && !highlighted"
+          :required="variable.required && !isResourceOverride && !highlighted"
           :title="!highlighted ? withFallback(`capi.variables.${label}`, null, label) : ' '"
           :options="variableOptions"
           :rules="!isListComponent ? validationRules : []"

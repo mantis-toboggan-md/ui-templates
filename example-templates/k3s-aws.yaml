@@ -8,6 +8,9 @@ spec:
     - path: 'metadata.name'
       target: cluster
       template: '{{variables.name}}'
+    - path: 'spec.kubernetesVersion'
+      target: cluster
+      template: '{{variables.k3sVersion}}'
     - path: 'metadata.name'
       target: machinePool
       template: '{{variables.name}}-{{variables.poolName}}'
@@ -137,14 +140,20 @@ spec:
         type: rke-machine-config.cattle.io.amazonec2config
   resourceDefaults:
     - name: machinePool
-      overrides:
-      - name: name
-        value: test-value-please-ignore
     - name: cluster
   variables:
     - metadata:
         annotations:
+          toboggan.md/component: 'TemplateK3sVersion'
+      name: k3sVersion
+      required: true
+      schema:
+        openAPIV3Schema:
+          type: string
+    - metadata:
+        annotations:
           toboggan.md/component: 'TemplateCloudCredentialAws'
+          toboggan.md/widest: 'true'
       name: cloudCredential
       required: true
       schema:
@@ -155,13 +164,13 @@ spec:
       required: true
       schema:
         openAPIV3Schema:
-          description: metadata.name
           type: string
     - name: clustermembership
       metadata:
         annotations:
           toboggan.md/component: TemplateClusterMembership
           toboggan.md/section: Cluster Membership
+          toboggan.md/widest: 'true'
       required: false
       schema:
         openAPIV3Schema:

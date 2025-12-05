@@ -99,7 +99,6 @@ export const generateManifest = (store, uitemplate, variableConfiguration = [], 
             return all;
           }, {});
 
-          debugger;
           const iterateConfig = {
             resource:  iterateResourceConfiguration,
             overrides: iterateVariablesForTemplateContext,

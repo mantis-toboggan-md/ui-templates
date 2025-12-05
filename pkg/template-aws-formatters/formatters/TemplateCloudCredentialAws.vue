@@ -56,6 +56,7 @@ export default {
 
 <template>
   <SelectCredential
+    class="mr-20"
     :value="value"
     mode="create"
     provider="aws"

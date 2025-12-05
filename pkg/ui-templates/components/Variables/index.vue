@@ -445,7 +445,7 @@ export default {
                     :all-variables="value"
                     :variable="variableDef"
                     :value="valueFor(variableDef)"
-                    :is-machine-scoped="isResourceScoped"
+                    :is-resource-override="isResourceScoped && key==='misc'"
                     :global-variables="globalVariables"
                     :validate-required="!isResourceScoped"
                     :cluster-namespace="clusterNamespace"
