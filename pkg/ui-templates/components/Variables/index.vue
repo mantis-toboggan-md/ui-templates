@@ -51,7 +51,7 @@ export default {
       default: ''
     },
 
-    // used in machine context to display the global value as a placeholder
+    // used in resource-scoped context to display the global value as a placeholder
     globalVariables: {
       type:    Array,
       default: () => []
@@ -123,26 +123,33 @@ export default {
       return !!this.resourceScope;
     },
 
+    resourceScopedVariableDefinitions() {
+      const resourceDef = (this.uitemplate?.spec?.resources || []).find((r) => r.name === this.resourceScope);
+
+      return resourceDef.variables || [];
+    },
+
+    globalVariableDefinitions() {
+      return this.uitemplate?.spec?.variables || [];
+    },
+
     // if not machine scoped, scope using section prop
     // if neither machine scoped nor section scoped show all variables that are not section scoped
     variableDefinitions() {
-      const globalVariableDefinitions = this.uitemplate?.spec?.variables || [];
+      // const globalVariableDefinitions = this.uitemplate?.spec?.variables || [];
 
       if (!this.isResourceScoped) {
         // variables with annotation matching this section
         if (this.section) {
-          return globalVariableDefinitions.filter((v) => (v?.metadata?.annotations?.[ANNOTATIONS.SECTION] || '').toLowerCase() === this.section);
+          return this.globalVariableDefinitions.filter((v) => (v?.metadata?.annotations?.[ANNOTATIONS.SECTION] || '').toLowerCase() === this.section);
           // if this component doesn't have section prop show all variables without section prop
           // and all variables with a section prop that does not match the list  shown in ClusterConfig (FORM_SECTIONS)
         } else {
-          return globalVariableDefinitions.filter((v) => !Object.values(FORM_SECTIONS).includes((v?.metadata?.annotations?.[ANNOTATIONS.SECTION] || '').toLowerCase()) || !v?.metadata?.annotations?.[ANNOTATIONS.SECTION]);
+          return this.globalVariableDefinitions.filter((v) => !Object.values(FORM_SECTIONS).includes((v?.metadata?.annotations?.[ANNOTATIONS.SECTION] || '').toLowerCase()) || !v?.metadata?.annotations?.[ANNOTATIONS.SECTION]);
         }
       }
 
-      const resourceDef = (this.uitemplate?.spec?.resources || []).find((r) => r.name === this.resourceScope);
-      const resourceScopedVariables = resourceDef.variables || [];
-
-      return [...globalVariableDefinitions.filter((v) => this.resourceVariableOverrideNames.includes(v.name)), ...resourceScopedVariables];
+      return [...this.globalVariableDefinitions.filter((v) => this.resourceVariableOverrideNames.includes(v.name)), ...this.resourceScopedVariableDefinitions];
     },
 
     // group variables by section
@@ -168,7 +175,12 @@ export default {
     // if machine scoped, ignore sections
     groupedVariableDefinitions() {
       const out = { };
-      const startWith = this.isResourceScoped ? { misc: this.variableDefinitions } : this.sectionedVariableDefinitions;
+      // const startWith = this.isResourceScoped ? { misc: this.variableDefinitions } : this.sectionedVariableDefinitions;
+      let startWith = this.sectionedVariableDefinitions;
+
+      if (this.isResourceScoped) {
+        startWith = { misc: this.resourceScopedVariableDefinitions, overrides: this.globalVariableDefinitions.filter((v) => this.resourceVariableOverrideNames.includes(v.name)) };
+      }
 
       for (const section in startWith) {
         const grouped = { };
@@ -395,21 +407,21 @@ export default {
       </Accordion>
       <div v-else>
         <div
-          v-if="isResourceScoped"
+          v-if="isResourceScoped && key !== 'misc'"
           :style="{cursor: 'pointer'}"
           class="expander mt-10"
           @click="()=>expanded=!expanded"
         >
-          <h4>
+          <h5>
             <i
               class="icon text-primary"
               :class="{'icon-chevron-down': expanded, 'icon-chevron-up':!expanded}"
-            />Override Defaults
-          </h4>
+            />Override Global Variables
+          </h5>
         </div>
         <div
-          v-if="expanded || !isResourceScoped"
-          :class="{'expandee':expanded}"
+          v-if="expanded || !isResourceScoped || key==='misc'"
+          :class="{'expandee':expanded && key!== 'misc'}"
         >
           <div
             v-for="(group, label) in s"

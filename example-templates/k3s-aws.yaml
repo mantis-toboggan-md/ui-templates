@@ -135,7 +135,6 @@ spec:
         vpcId: vpc-07cdd250a077f6773
         zone: a
         type: rke-machine-config.cattle.io.amazonec2config
-
   resourceDefaults:
     - name: machinePool
       overrides:
