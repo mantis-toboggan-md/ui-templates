@@ -11,6 +11,9 @@ spec:
     - path: 'spec.kubernetesVersion'
       target: cluster
       template: '{{variables.k3sVersion}}'
+    - path: 'spec.cloudCredentialSecretName'
+      target: cluster
+      template: '{{variables.cloudCredential}}'
     - path: 'metadata.name'
       target: machinePool
       template: '{{variables.name}}-{{variables.poolName}}'
@@ -99,7 +102,7 @@ spec:
               mirrors: {}
           machineSelectorConfig:
             - config: {}
-          kubernetesVersion: REPLACE_ME
+          kubernetesVersion: v1.34.2+k3s1
           defaultPodSecurityAdmissionConfigurationTemplateName: ''
           localClusterAuthEndpoint:
             enabled: false

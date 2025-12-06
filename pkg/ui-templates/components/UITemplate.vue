@@ -203,7 +203,7 @@ export default {
         @validation-passed="e=>allVariablesValid=e"
       />
 
-      <!-- INDIVIDUAL RESOURCES POTENTIALLY WITH VARIABLE OVERRIDES -->
+      <!-- INDIVIDUAL RESOURCES POTENTIALLY WITH VARIABLES -->
       <template v-if="addableResources && addableResources.length">
         <div
           v-for="resource in addableResources"
