@@ -73,6 +73,21 @@ export default {
       default: _CREATE
     },
 
+    // toboggan.md.template resource
+    uitemplate: {
+      type:    Object,
+      default: () => {
+        return {};
+      }
+    },
+
+    resourceConfiguration: {
+      type:    Object,
+      default: () => {
+        return {};
+      }
+    },
+
   },
 
   watch: {
@@ -398,7 +413,8 @@ export default {
           :value="displayValue"
           :label="!highlighted ? withFallback(`capi.variables.${label}`, null, label) : ' '"
           :on-label="isToggle ? withFallback(`capi.variables.${label}`, null, label) : undefined"
-
+          :global-variable-configuration="globalVariables"
+          :resource-configuration="resourceConfiguration"
           :placeholder="placeholder"
           :tooltip="tooltip"
           :status="annotationError ? 'warning' : null"
@@ -410,7 +426,6 @@ export default {
           :as-map="true"
           :resource-type="resourceType"
           :cluster-namespace="clusterNamespace"
-
           @update:value="e=>setValue(e, toggleOpen)"
         >
           <template #title>

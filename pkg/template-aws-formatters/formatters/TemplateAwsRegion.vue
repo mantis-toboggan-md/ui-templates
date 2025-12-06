@@ -1,5 +1,6 @@
 <script>
 import { exceptionToErrorsArray } from '@shell/utils/error';
+import LabeledSelect from '@shell/components/form/LabeledSelect';
 
 const CLOUD_CRED_VARIABLE_NAME = 'cloudCredential';
 
@@ -7,6 +8,8 @@ export default {
   name: 'AwsRegionTemplateFormatter',
 
   emits: ['update:value', 'validation-passed'],
+
+  components: { LabeledSelect },
 
   props: {
     value: {
@@ -42,37 +45,19 @@ export default {
   },
 
   async fetch() {
-    this.errors = [];
-    if ( !this.credentialId ) {
-      return;
-    }
-
-    try {
-      const region = this.value.region || this.$store.getters['aws/defaultRegion'];
-
-      if (!this.value) {
-        this.$emit('update:value', region);
-      }
-
-      this.ec2Client = await this.$store.dispatch('aws/ec2', { region, cloudCredentialId: this.credentialId });
-
-      this.regionInfo = await this.ec2Client.describeRegions({});
-
-      if ( !this.value.zone ) {
-        this.value['zone'] = 'a';
-      }
-    } catch (e) {
-      this.errors = exceptionToErrorsArray(e);
-    }
+    await this.fetchRegionInfo();
   },
 
   data() {
-    return { regionInfo: {} };
+    return { regionInfo: null, loading: false };
   },
 
   watch: {
-    cloudCredentialId() {
-      this.fetch();
+    cloudCredentialId: {
+      handler() {
+        this.fetchRegionInfo();
+      },
+    //   immediate: true
     },
 
     value: {
@@ -84,7 +69,9 @@ export default {
         }
       },
       immediate: true
-    }
+    },
+
+    globalVariableConfiguration: { deep: true }
   },
 
   computed: {
@@ -101,8 +88,39 @@ export default {
         return obj.RegionName;
       }).sort();
     },
+  },
 
-  }
+  methods: {
+    async fetchRegionInfo() {
+      this.loading = true;
+      this.errors = [];
+      if ( !this.credentialId ) {
+        this.loading = false;
+
+        return;
+      }
+
+      try {
+        const region = this.value.region || this.$store.getters['aws/defaultRegion'];
+
+        if (!this.value) {
+          this.$emit('update:value', region);
+        }
+
+        this.ec2Client = await this.$store.dispatch('aws/ec2', { region, cloudCredentialId: this.credentialId });
+
+        this.regionInfo = await this.ec2Client.describeRegions({});
+
+        // if ( !this.value.zone ) {
+        //   this.value['zone'] = 'a';
+        // }
+      } catch (e) {
+        this.errors = exceptionToErrorsArray(e);
+      }
+
+      this.loading = false;
+    }
+  },
 };
 </script>
 
@@ -110,10 +128,11 @@ export default {
   <div>
     <LabeledSelect
       required
+      :loading="loading"
       label="AWS Region"
       :value="value"
       :options="regionOptions"
-      @input="e=>$emit('update:value')"
+      @update:value="e=>$emit('update:value')"
     />
   </div>
 </template>

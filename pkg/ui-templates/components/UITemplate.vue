@@ -143,7 +143,7 @@ export default {
         componentProps: {
           uitemplate:            this.selectedTemplate,
           variableConfiguration: this.configuredVariables,
-          resourceConfiguration:     this.requestedResources,
+          resourceConfiguration: this.requestedResources,
           doneLocation:          this.doneLocationOverride
         }
       });
@@ -198,6 +198,8 @@ export default {
       <Variables
         v-model:value="configuredVariables"
         :uitemplate="selectedTemplate"
+        :global-variables="configuredVariables"
+        :resource-configuration="resourceConfiguration"
         :hide-populated="hidePopulated"
         :hide-optional="hideOptional"
         @validation-passed="e=>allVariablesValid=e"

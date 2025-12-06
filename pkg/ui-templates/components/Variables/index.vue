@@ -57,6 +57,13 @@ export default {
       default: () => []
     },
 
+    resourceConfiguration: {
+      type:    Object,
+      default: () => {
+        return {};
+      }
+    },
+
     section: {
       type:    String,
       default: ''
@@ -358,6 +365,8 @@ export default {
                   :value="valueFor(variableDef)"
                   :is-machine-scoped="isResourceScoped"
                   :global-variables="globalVariables"
+                  :uitemplate="uitemplate"
+                  :resource-configuration="resourceConfiguration"
                   :validate-required="!isResourceScoped"
                   :cluster-namespace="clusterNamespace"
                   @update:value="e=>updateVariables(e, variableDef)"
@@ -386,6 +395,8 @@ export default {
                 :all-definitions="variableDefinitions"
                 :will-open="willOpen"
                 :global-variables="globalVariables"
+                :uitemplate="uitemplate"
+                :resource-configuration="resourceConfiguration"
                 :all-variables="value"
                 :variable="variableDef"
                 :value="valueFor(variableDef)"
@@ -447,6 +458,8 @@ export default {
                     :value="valueFor(variableDef)"
                     :is-resource-override="isResourceScoped && key==='misc'"
                     :global-variables="globalVariables"
+                    :uitemplate="uitemplate"
+                    :resource-configuration="resourceConfiguration"
                     :validate-required="!isResourceScoped"
                     :cluster-namespace="clusterNamespace"
                     :mode="mode"
@@ -476,6 +489,8 @@ export default {
                   :all-definitions="variableDefinitions"
                   :will-open="willOpen"
                   :global-variables="globalVariables"
+                  :uitemplate="uitemplate"
+                  :resource-configuration="resourceConfiguration"
                   :all-variables="value"
                   :variable="variableDef"
                   :value="valueFor(variableDef)"
