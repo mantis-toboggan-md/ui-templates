@@ -7,6 +7,7 @@ import CreateEditView from '@shell/mixins/create-edit-view';
 import Banner from '@components/Banner/Banner.vue';
 import Accordion from '@components/Accordion/Accordion.vue';
 import ToggleSwitch from '@components/Form/ToggleSwitch/ToggleSwitch.vue';
+import { BEFORE_SAVE_HOOKS, AFTER_SAVE_HOOKS } from '@shell/mixins/child-hook';
 
 import Variables from './Variables/index.vue';
 import UITemplateSubResource from './UITemplateSubResource.vue';
@@ -138,6 +139,8 @@ export default {
 
     async saveManifest(cb) {
       try {
+        await this.applyHooks(BEFORE_SAVE_HOOKS, this.value);
+
         let currentCluster = this.$store.getters['currentCluster'];
 
         if (!currentCluster) {
@@ -148,6 +151,7 @@ export default {
 
         // eslint-disable-next-line node/no-callback-literal
         cb(true);
+        await this.applyHooks(AFTER_SAVE_HOOKS, this.value);
         this.done();
       } catch (e) {
         this.errors = [e];
@@ -201,7 +205,7 @@ export default {
     </AsyncButton>
   </div>
 
-  <div v-else>
+  <div v-show="!manifest">
     <div class="center row">
       <div class="center col span-6">
         <LabeledSelect
@@ -223,9 +227,11 @@ export default {
       <!-- GLOBAL VARIABLES -->
       <Variables
         v-model:value="configuredVariables"
+        :register-before-hook="registerBeforeHook"
+        :register-after-hook="registerAfterHook"
         :uitemplate="selectedTemplate"
         :global-variables="configuredVariables"
-        :resource-configuration="resourceConfiguration"
+        :resource-configuration="requestedResources"
         :hide-populated="hidePopulated"
         :hide-optional="hideOptional"
         @validation-passed="e=>globalVariablesValid=e"
@@ -269,7 +275,10 @@ export default {
               <UITemplateSubResource
                 v-model:overrides="r.overrides"
                 v-model:resource-variables="r.variables"
+                :register-before-hook="registerBeforeHook"
+                :register-after-hook="registerAfterHook"
                 :resource-name="resource.name"
+                :resource-configuration="requestedResources"
                 :selected-template="selectedTemplate"
                 :global-variables="configuredVariables"
                 :hide-populated="hidePopulated"

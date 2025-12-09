@@ -61,20 +61,24 @@ export default {
 
   methods: {
     async getNormanCluster() {
-      const clusterConfig = Object.keys(this.resourceConfiguration).find((resourceName) => {
-        const resources = this.resourceConfiguration[resourceName];
+      console.log('*** GETTING NORMAN CLUSTER');
+      // const clusterConfig = Object.keys(this.resourceConfiguration).find((resourceName) => {
+      //   const resources = this.resourceConfiguration[resourceName];
 
-        const provClusterResource = resources.find((r) => {
-          return r.objectToBePatched?.type === CAPI.RANCHER_CLUSTER;
-        });
+      //   const provClusterResource = resources.find((r) => {
+      //     return r?.['k8s-type'] === CAPI.RANCHER_CLUSTER;
+      //   });
 
-        if (provClusterResource) {
-          return true;
-        }
+      //   if (provClusterResource) {
+      //     return true;
+      //   }
 
-        return false;
-      });
+      //   return false;
+      // });
 
+      const clusterConfig = this.resourceConfiguration['cluster']?.[0];
+
+      debugger;
       const clusterObject = clusterConfig.objectToBePatched;
 
       const provCluster = await this.$store.dispatch('management/find', { type: CAPI.RANCHER_CLUSTER, id: `${ clusterObject?.metadata?.namespace }/${ clusterObject?.metadata?.name }` });
@@ -87,7 +91,7 @@ export default {
     },
 
     async saveRoleBindings() {
-      const normanCluster = this.getNormanCluster();
+      const normanCluster = await this.getNormanCluster();
 
       if (this.membershipUpdate?.save) {
         await this.membershipUpdate.save(normanCluster.id);

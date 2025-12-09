@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/no-empty-function -->
 <script>
 import isEqual from 'lodash/isEqual';
 import jsyaml from 'js-yaml';
@@ -87,6 +88,16 @@ export default {
         return {};
       }
     },
+
+    registerBeforeHook: {
+      type:    Function,
+      default: () => {}
+    },
+
+    registerAfterHook: {
+      type:    Function,
+      default: () => {}
+    }
 
   },
 
@@ -408,6 +419,8 @@ export default {
           :is="componentForType.component"
           v-if="componentForType"
           :id="componentForType.name"
+          :register-before-hook="registerBeforeHook"
+          :register-after-hook="registerAfterHook"
           :mode="mode"
           :aria-label="withFallback(`capi.variables.${label}`, null, label)"
           :value="displayValue"

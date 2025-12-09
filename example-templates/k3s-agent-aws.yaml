@@ -154,7 +154,7 @@ spec:
     - name: agent
       k8s-type: rke-machine-config.cattle.io.amazonec2config
       min: 1
-      max: 1
+      max: 3
       required: true
       variables:
       - name: poolName
@@ -195,7 +195,7 @@ spec:
     - name: workerPool
       k8s-type: rke-machine-config.cattle.io.amazonec2config
       min: 1
-      max: 9999
+      max: 5
       required: true
       variables:
       - name: poolName
@@ -275,7 +275,7 @@ spec:
         openAPIV3Schema:
           type: integer
           default: 1
-          maximum: 4
+          maximum: 5
     - name: region
       metadata:
         annotations:

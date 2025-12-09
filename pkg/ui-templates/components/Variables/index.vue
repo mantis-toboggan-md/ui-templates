@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/no-empty-function -->
 <script>
 import { mapGetters } from 'vuex';
 // import throttle from 'lodash/throttle';
@@ -100,6 +101,16 @@ export default {
       type:    String,
       default: _CREATE
     },
+
+    registerBeforeHook: {
+      type:    Function,
+      default: () => {}
+    },
+
+    registerAfterHook: {
+      type:    Function,
+      default: () => {}
+    }
 
   },
 
@@ -387,6 +398,8 @@ export default {
               >
                 <Variable
                   :ref="`${variableDef.name}-input`"
+                  :register-before-hook="registerBeforeHook"
+                  :register-after-hook="registerAfterHook"
                   :all-definitions="variableDefinitions"
                   :will-open="willOpen"
                   :all-variables="value"
@@ -421,6 +434,8 @@ export default {
             >
               <Variable
                 :ref="`${variableDef.name}-input`"
+                :register-before-hook="registerBeforeHook"
+                :register-after-hook="registerAfterHook"
                 :all-definitions="variableDefinitions"
                 :will-open="willOpen"
                 :global-variables="globalVariables"
@@ -480,6 +495,8 @@ export default {
                 >
                   <Variable
                     :ref="`${variableDef.name}-input`"
+                    :register-before-hook="registerBeforeHook"
+                    :register-after-hook="registerAfterHook"
                     :all-definitions="variableDefinitions"
                     :will-open="willOpen"
                     :all-variables="value"
@@ -515,6 +532,8 @@ export default {
               >
                 <Variable
                   :ref="`${variableDef.name}-input`"
+                  :register-before-hook="registerBeforeHook"
+                  :register-after-hook="registerAfterHook"
                   :all-definitions="variableDefinitions"
                   :will-open="willOpen"
                   :global-variables="globalVariables"
