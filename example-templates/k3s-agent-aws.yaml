@@ -1,7 +1,7 @@
 apiVersion: toboggan.md/v1
 kind: Template
 metadata:
-  name: k3s-aws-example
+  name: k3s-aws-example-agent
   namespace: default
 spec:
   patches:
@@ -15,29 +15,61 @@ spec:
       target: cluster
       template: '{{variables.cloudCredential}}'
     - path: 'metadata.name'
-      target: machinePool
+      target: agent
       template: '{{variables.name}}-{{variables.poolName}}'
     - path: 'region'
-      target: machinePool
+      target: agent
       template: '{{variables.region}}'
     - path: 'vpcId'
-      target: machinePool
+      target: agent
       template: '{{variables.network.vpcId}}'
     - path: 'subnetId'
-      target: machinePool
+      target: agent
       template: '{{variables.network.subnetId}}'
     - path: 'instanceType'
-      target: machinePool
+      target: agent
       template: '{{variables.instanceType}}'
-    - iterate: machinePool
+    - iterate: agent
       op: append
-      path: 'spec.rkeConfig.machinePools'
+      path: 'spec.rkeConfig.agents'
       target: cluster
       template: |-
         name: {{iterate.overrides.poolName}}
-        etcdRole: {{iterate.overrides.etcdRole}}
-        controlPlaneRole: {{iterate.overrides.controlPlaneRole}}
-        workerRole: {{iterate.overrides.workerRole}}
+        etcdRole: true
+        controlPlaneRole: true
+        workerRole: false
+        hostnamePrefix: ''
+        labels: {}
+        quantity: {{iterate.overrides.quantity}}
+        unhealthyNodeTimeout: 0m
+        machineConfigRef:
+          kind: Amazonec2Config
+          name: {{iterate.resource.metadata.name}}
+        drainBeforeDelete: true
+    - path: 'metadata.name'
+      target: workerPool
+      template: '{{variables.name}}-{{variables.poolName}}'
+    - path: 'region'
+      target: workerPool
+      template: '{{variables.region}}'
+    - path: 'vpcId'
+      target: workerPool
+      template: '{{variables.network.vpcId}}'
+    - path: 'subnetId'
+      target: workerPool
+      template: '{{variables.network.subnetId}}'
+    - path: 'instanceType'
+      target: workerPool
+      template: '{{variables.instanceType}}'
+    - iterate: workerPool
+      op: append
+      path: 'spec.rkeConfig.workerPools'
+      target: cluster
+      template: |-
+        name: {{iterate.overrides.poolName}}
+        etcdRole: false
+        controlPlaneRole: false
+        workerRole: true
         hostnamePrefix: ''
         labels: {}
         quantity: {{iterate.overrides.quantity}}
@@ -119,7 +151,48 @@ spec:
           localClusterAuthEndpoint:
             enabled: false
           cloudCredentialSecretName: REPLACE_ME
-    - name: machinePool
+    - name: agent
+      k8s-type: rke-machine-config.cattle.io.amazonec2config
+      min: 1
+      max: 1
+      required: true
+      variables:
+      - name: poolName
+        required: true
+        schema:
+          openAPIV3Schema:
+            description: Name of the agent pool. This will be combined with the name of the cluster to ensure all pools have names unique within the Rancher instance.
+            type: string
+      - name: agentQuantity
+        metadata:
+          annotations:
+            toboggan.md/section: Default Machine Pool Configuration
+        required: true
+        schema:
+          openAPIV3Schema:
+            default: 3
+            type: integer
+            minimum: 3
+      overrides:
+      - region
+      - network
+      - instanceType
+      template: |-
+        kind: Amazonec2Config
+        apiVersion: rke-machine-config.cattle.io/v1
+        instanceType: t3a.medium
+        metadata:
+          annotations: {}
+          labels: {}
+          namespace: fleet-default
+        openPort: []
+        region: us-west-2
+        securityGroup:
+          - rancher-nodes
+        securityGroupReadonly: false
+        zone: a
+        type: rke-machine-config.cattle.io.amazonec2config
+    - name: workerPool
       k8s-type: rke-machine-config.cattle.io.amazonec2config
       min: 1
       max: 9999
@@ -129,7 +202,7 @@ spec:
         required: true
         schema:
           openAPIV3Schema:
-            description: Name of the machine pool. This will be combined with the name of the cluster to ensure all pools have names unique within the Rancher instance.
+            description: Name of the worker pool. This will be combined with the name of the cluster to ensure all pools have names unique within the Rancher instance.
             type: string
       overrides:
       - etcdRole
@@ -155,8 +228,9 @@ spec:
         zone: a
         type: rke-machine-config.cattle.io.amazonec2config
   resourceDefaults:
-    - name: machinePool
+    - name: agent
     - name: cluster
+    - name: workerPool
   variables:
     - metadata:
         annotations:
@@ -192,33 +266,6 @@ spec:
       schema:
         openAPIV3Schema:
           type: string
-    - name: etcdRole
-      metadata:
-        annotations:
-          toboggan.md/section: Default Machine Pool Configuration
-      required: true
-      schema:
-        openAPIV3Schema:
-          type: boolean
-          default: true
-    - name: controlPlaneRole
-      metadata:
-        annotations:
-          toboggan.md/section: Default Machine Pool Configuration
-      required: true
-      schema:
-        openAPIV3Schema:
-          type: boolean
-          default: true
-    - name: workerRole
-      metadata:
-        annotations:
-          toboggan.md/section: Default Machine Pool Configuration
-      required: true
-      schema:
-        openAPIV3Schema:
-          type: boolean
-          default: true
     - name: quantity
       metadata:
         annotations:

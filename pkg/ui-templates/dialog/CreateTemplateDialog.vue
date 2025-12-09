@@ -71,7 +71,9 @@ export default {
 
       this.model.spec.resourceDefaults = (Object.keys(this.resourceConfiguration) || []).reduce((all, resourceName) => {
         all.push(...this.resourceConfiguration[resourceName].map((val) => {
-          return { name: resourceName, overrides: val.overrides };
+          return {
+            name: resourceName, overrides: val.overrides, variables: val.variables
+          };
         }));
 
         return all;

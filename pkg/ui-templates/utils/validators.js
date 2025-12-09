@@ -14,6 +14,7 @@ import formRulesGenerator from '@shell/utils/validators/formRules/index';
  * @returns an array of validator functions that work with the form-validation mixin. These can be supplied to any component wth the labeled-form-element mixin using the rules prop
  */
 export const openAPIV3SchemaValidators = function(
+  t,
   { key = 'Value' },
   openAPIV3Schema
 ) {

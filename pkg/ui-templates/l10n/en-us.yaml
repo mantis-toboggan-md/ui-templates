@@ -1,0 +1,26 @@
+validation:
+  exclusiveMaxValue: '"{key}" must be less than {maximum}.'
+  exclusiveMinValue: '"{key}" must be greater than {minimum}.'
+  maxItems: |-
+    {maxItems, plural,
+      one {"{key}" may contain no more than {maxItems} item.}
+      other {"{key}" may contain no more than {maxItems} items.}
+    }
+  minItems: |-
+    {minItems, plural,
+      one {"{key}" must contain at least {minItems} item.}
+      other {"{key}" must contain at least {minItems} items.}
+    }
+  pattern: '"{key}" must match the pattern <code>{pattern}</code>.'
+  stringFormat: '"{key}" must be a valid {format}.'
+  uniqueItems: '"{key}" may not contain duplicate elements.'
+  version: "Version format  should be in the semver format prefixed with 'v'. Example: v1.9.3"
+  name: Name is required and must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character.
+  port: Port value must be a number.
+  url: '"Value" must be a valid URL.'
+error:
+  clusterClassNotFound: Could not find corresponding cluster class. Please check that cluster class exists and is valid.
+  yamlPlaceholderError: 'Error generating a yaml template for {variable}: '
+  yamlParseError: 'Error parsing yaml in {variable}: '
+  parseVariableAnnotation: Error parsing the {variable} {annotation} annotation - this variable may not be displayed correctly.
+

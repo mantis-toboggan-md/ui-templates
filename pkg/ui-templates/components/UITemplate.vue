@@ -5,6 +5,8 @@ import YamlEditor from '@shell/components/YamlEditor';
 import AsyncButton from '@shell/components/AsyncButton';
 import CreateEditView from '@shell/mixins/create-edit-view';
 import Banner from '@components/Banner/Banner.vue';
+import Accordion from '@components/Accordion/Accordion.vue';
+import ToggleSwitch from '@components/Form/ToggleSwitch/ToggleSwitch.vue';
 
 import Variables from './Variables/index.vue';
 import UITemplateSubResource from './UITemplateSubResource.vue';
@@ -23,6 +25,8 @@ export default {
     YamlEditor,
     AsyncButton,
     Banner,
+    Accordion,
+    ToggleSwitch,
     UITemplateSubResource
   },
 
@@ -50,15 +54,16 @@ export default {
 
   data() {
     return {
-      errors:               [],
-      templates:            [],
-      selectedTemplate:     null,
-      configuredVariables:  [],
-      requestedResources:   {},
-      allVariablesValid:    false,
-      manifest:             '',
-      hidePopulated:        false, // TODO nb
-      hideOptional:         false // TODO nb
+      errors:                [],
+      templates:             [],
+      selectedTemplate:      null,
+      configuredVariables:   [],
+      requestedResources:    {},
+      globalVariablesValid:  false,
+      resourceValid:         {},
+      manifest:              '',
+      hideOptional:         false, // TODO nb
+      disabledResources:    {}
     };
   },
 
@@ -85,7 +90,12 @@ export default {
         return [];
       }
 
-      return (this.selectedTemplate.spec?.resources || []).filter((r) => r.max && r.max > r.min);
+      // return (this.selectedTemplate.spec?.resources || []).filter((r) => r.max && r.max > r.min);
+      return (this.selectedTemplate.spec?.resources || []).filter((r) => r.variables?.length || r.overrides?.length);
+    },
+
+    allVariablesValid() {
+      return this.globalVariablesValid && !Object.keys(this.resourceValid).find((k) => !this.resourceValid[k]);
     },
   },
 
@@ -101,7 +111,7 @@ export default {
         if (!this.requestedResources[r.name]) {
           this.requestedResources[r.name] = [];
         }
-        this.requestedResources[r.name].push({ overrides: r.overrides || [] });
+        this.requestedResources[r.name].push({ overrides: r.overrides || [], variables: r.variables || [] });
       });
     },
 
@@ -110,11 +120,20 @@ export default {
         this.requestedResources[name] = [];
       }
 
-      this.requestedResources[name].push({ overrides: [] });
+      this.requestedResources[name].push({ overrides: [], variables: [] });
+      const resourceConfig = this.addableResources.find((r) => r.name === name);
+
+      if (this.requestedResources[name].length >= resourceConfig.max) {
+        this.disabledResources[name] = true;
+      }
     },
 
     removeInstanceOfResource(name, idx) {
       this.requestedResources[name].splice(idx, 1);
+    },
+
+    setResourceValid(name, e) {
+      this.resourceValid[name] = e;
     },
 
     async saveManifest(cb) {
@@ -183,13 +202,20 @@ export default {
   </div>
 
   <div v-else>
-    <div class="row">
-      <div class="col span-6">
+    <div class="center row">
+      <div class="center col span-6">
         <LabeledSelect
           v-model:value="selectedTemplate"
           option-label="id"
           :options="availableTemplates"
           label="Template"
+        />
+      </div>
+      <div class="center col span-6">
+        <ToggleSwitch
+          v-if="selectedTemplate"
+          v-model:value="hideOptional"
+          on-label="Hide optional fields"
         />
       </div>
     </div>
@@ -202,7 +228,7 @@ export default {
         :resource-configuration="resourceConfiguration"
         :hide-populated="hidePopulated"
         :hide-optional="hideOptional"
-        @validation-passed="e=>allVariablesValid=e"
+        @validation-passed="e=>globalVariablesValid=e"
       />
 
       <!-- INDIVIDUAL RESOURCES POTENTIALLY WITH VARIABLES -->
@@ -211,43 +237,96 @@ export default {
           v-for="resource in addableResources"
           :key="resource.name"
         >
-          <UITemplateSubResource
-            v-for="r, i in requestedResources[resource.name]"
-            :key="i"
-            v-model:overrides="r.overrides"
-            :resource-name="resource.name"
-            :selected-template="selectedTemplate"
-            :global-variables="configuredVariables"
-            :hide-populated="hidePopulated"
-            :hide-optional="hideOptional"
-            @remove="removeInstanceOfResource(resource.name, i)"
-          />
           <button
-            class="btn btn-sm role-primary"
+            v-if="resource.max !== 1"
+            class="btn btn-sm role-primary mt-20"
+            :disabled="disabledResources[resource.name]"
             @click="addInstanceOfResource(resource.name)"
           >
             Add {{ resource.name }}
           </button>
+          <template
+            v-for="r, i in requestedResources[resource.name]"
+            :key="i"
+          >
+            <Accordion
+              class="mt-20"
+              :open-initially="true"
+              :title="resource.max !== 1 ?`${resource.name} ${ i+1 }` : resource.name"
+            >
+              <template #header>
+                <div class="resource-header">
+                  <h2>{{ resource.max !== 1 ?`${resource.name} ${ i+1 }` : resource.name }}</h2>
+                  <button
+                    v-if="resource.max !== 1"
+                    class="btn btn-sm role-tertiary"
+                    @click="removeInstanceOfResource(resource.name, i)"
+                  >
+                    remove
+                  </button>
+                </div>
+              </template>
+              <UITemplateSubResource
+                v-model:overrides="r.overrides"
+                v-model:resource-variables="r.variables"
+                :resource-name="resource.name"
+                :selected-template="selectedTemplate"
+                :global-variables="configuredVariables"
+                :hide-populated="hidePopulated"
+                :hide-optional="hideOptional"
+                @validation-passed="e=>setResourceValid(resource.name, e)"
+              />
+            </Accordion>
+          </template>
         </div>
       </template>
-
-      <button
-        class="btn role-primary"
-        :disabled="!allVariablesValid"
-        @click="generate"
-      >
-        crunchatize me cap'n
-      </button>
-
-      <button
-        class="btn role-primary"
-        @click="createNewTemplate"
-      >
-        create a new template with these values
-      </button>
+      <div class="footer">
+        <button
+          class="btn role-secondary"
+          @click="createNewTemplate"
+        >
+          create a new template with these values
+        </button>
+        <button
+          class="btn role-primary"
+          :disabled="!allVariablesValid"
+          @click="generate"
+        >
+          Create
+        </button>
+      </div>
     </div>
     <div v-else>
-      Select a template to get started.
     </div>
   </div>
 </template>
+
+<style lang=scss scoped>
+  .resource-header{
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    & button {
+      position: relative;
+      top: -10px;
+    }
+  }
+
+.footer {
+  position: sticky;
+  bottom: 0px;
+  background: var(--body-bg);
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  & button {
+    margin-right: 4px;
+  }
+}
+
+.col.center{
+  align-self: center;
+}
+</style>

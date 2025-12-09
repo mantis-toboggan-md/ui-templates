@@ -17,6 +17,11 @@ export default {
       default: null
     },
 
+    placeholder: {
+      type:    [Object, Array, Number, String, Boolean],
+      default: null
+    },
+
     variableDefinition: {
       type:    Object,
       default: () => {
@@ -45,7 +50,9 @@ export default {
   },
 
   async fetch() {
-    await this.fetchRegionInfo();
+    await setTimeout(() => {
+      this.fetchRegionInfo();
+    }, 1000);
   },
 
   data() {
@@ -57,7 +64,7 @@ export default {
       handler() {
         this.fetchRegionInfo();
       },
-    //   immediate: true
+      immediate: true
     },
 
     value: {
@@ -101,19 +108,15 @@ export default {
       }
 
       try {
-        const region = this.value.region || this.$store.getters['aws/defaultRegion'];
+        const region = this.value || this.$store.getters['aws/defaultRegion'];
 
-        if (!this.value) {
+        if (!this.value && !this.placeholder) {
           this.$emit('update:value', region);
         }
 
         this.ec2Client = await this.$store.dispatch('aws/ec2', { region, cloudCredentialId: this.credentialId });
 
         this.regionInfo = await this.ec2Client.describeRegions({});
-
-        // if ( !this.value.zone ) {
-        //   this.value['zone'] = 'a';
-        // }
       } catch (e) {
         this.errors = exceptionToErrorsArray(e);
       }
@@ -128,11 +131,12 @@ export default {
   <div>
     <LabeledSelect
       required
+      :placeholder="placeholder"
       :loading="loading"
       label="AWS Region"
       :value="value"
       :options="regionOptions"
-      @update:value="e=>$emit('update:value')"
+      @update:value="e=>$emit('update:value', e)"
     />
   </div>
 </template>

@@ -88,10 +88,11 @@ export const generateManifest = (store, uitemplate, variableConfiguration = [], 
         resourcesToIterateThrough.forEach((iteratedResource, idx) => {
           const iterateResourceConfiguration = iteratedResource.objectToBePatched || {};
           const iterateResourceOverrides = iteratedResource.overrides || [];
+          const iterateResourceVariables = iteratedResource.variables || [];
           const overriddenIterateNames = iterateResourceOverrides.map((o) => o.name);
           const relevantGlobalIterateVariables = variableConfiguration.filter((v) => !overriddenIterateNames.includes(v.name));
 
-          const allIterateVariables = [...relevantGlobalIterateVariables, ...iterateResourceOverrides];
+          const allIterateVariables = [...relevantGlobalIterateVariables, ...iterateResourceOverrides, ...iterateResourceVariables];
 
           const iterateVariablesForTemplateContext = allIterateVariables.reduce((all, v) => {
             all[v.name] = v.value;
@@ -113,12 +114,13 @@ export const generateManifest = (store, uitemplate, variableConfiguration = [], 
             const objectToBePatched = r.objectToBePatched;
 
             const overrides = r.overrides || [];
+            const resourceVariables = r.variables || [];
 
             const overriddenNames = overrides.map((o) => o.name);
 
             const relevantGlobalVariables = variableConfiguration.filter((v) => !overriddenNames.includes(v.name));
 
-            const patchValue = constructPatchValue(p, [...relevantGlobalVariables, ...overrides], iterateConfig);
+            const patchValue = constructPatchValue(p, [...relevantGlobalVariables, ...overrides, ...resourceVariables], iterateConfig);
 
             if (op === 'append') {
               const currentVal = get(objectToBePatched, p.path);
@@ -141,14 +143,25 @@ export const generateManifest = (store, uitemplate, variableConfiguration = [], 
         const objectToBePatched = r.objectToBePatched;
 
         const overrides = r.overrides || [];
+        const resourceVariables = r.variables || [];
 
         const overriddenNames = overrides.map((o) => o.name);
 
         const relevantGlobalVariables = variableConfiguration.filter((v) => !overriddenNames.includes(v.name));
 
-        const patchValue = constructPatchValue(p, [...relevantGlobalVariables, ...overrides]);
+        const patchValue = constructPatchValue(p, [...relevantGlobalVariables, ...overrides, ...resourceVariables]);
 
-        set(objectToBePatched, p.path, patchValue);
+        if (op === 'append') {
+          const currentVal = get(objectToBePatched, p.path);
+
+          if (!isArray(currentVal)) {
+            set(objectToBePatched, p.path, [patchValue]);
+          } else {
+            currentVal.push(patchValue);
+          }
+        } else {
+          set(objectToBePatched, p.path, patchValue);
+        }
       });
     }
   });

@@ -45,8 +45,24 @@ export default {
       }
     },
 
-    // if defined, used to show a subset of variables that can be overridden on an individual-resource level
+    hideOptional: {
+      type:    Boolean,
+      default: false
+    },
+
+    hidePopulated: {
+      type:    Boolean,
+      default: false
+    },
+
+    // if defined, used to show a subset of variables that can be set on an individual-resource level
     resourceScope: {
+      type:    String,
+      default: ''
+    },
+
+    // if defined, used to show global variables that can be overriden
+    resourceOverride: {
       type:    String,
       default: ''
     },
@@ -91,7 +107,8 @@ export default {
     return {
       errorCount:  0,
       rerenderKey: randomStr(), // this key is used on the spacer element so it can be forced to re-calculate its visibility when the cluster class changes
-      expanded:    false
+      expanded:    false,
+      hasHidden:   false
     };
   },
 
@@ -125,7 +142,7 @@ export default {
       return this.value.filter((v) => this.ownedVariableNames.includes(v.name));
     },
 
-    // is  the component being used for top  level variables or resource level/overrides?
+    // is  the component being used for top  level variables or resource overrides?
     isResourceScoped() {
       return !!this.resourceScope;
     },
@@ -144,19 +161,27 @@ export default {
     // if neither machine scoped nor section scoped show all variables that are not section scoped
     variableDefinitions() {
       // const globalVariableDefinitions = this.uitemplate?.spec?.variables || [];
+      let out = [];
 
       if (!this.isResourceScoped) {
         // variables with annotation matching this section
         if (this.section) {
-          return this.globalVariableDefinitions.filter((v) => (v?.metadata?.annotations?.[ANNOTATIONS.SECTION] || '').toLowerCase() === this.section);
+          out = this.globalVariableDefinitions.filter((v) => (v?.metadata?.annotations?.[ANNOTATIONS.SECTION] || '').toLowerCase() === this.section);
           // if this component doesn't have section prop show all variables without section prop
           // and all variables with a section prop that does not match the list  shown in ClusterConfig (FORM_SECTIONS)
         } else {
-          return this.globalVariableDefinitions.filter((v) => !Object.values(FORM_SECTIONS).includes((v?.metadata?.annotations?.[ANNOTATIONS.SECTION] || '').toLowerCase()) || !v?.metadata?.annotations?.[ANNOTATIONS.SECTION]);
+          out = this.globalVariableDefinitions.filter((v) => !Object.values(FORM_SECTIONS).includes((v?.metadata?.annotations?.[ANNOTATIONS.SECTION] || '').toLowerCase()) || !v?.metadata?.annotations?.[ANNOTATIONS.SECTION]);
         }
+      } else if (this.resourceOverride) {
+        out = [...this.globalVariableDefinitions.filter((v) => this.resourceVariableOverrideNames.includes(v.name))];
+      } else {
+        out = this.resourceScopedVariableDefinitions;
+      }
+      if (this.hideOptional) {
+        out = out.filter((v) => v.required);
       }
 
-      return [...this.globalVariableDefinitions.filter((v) => this.resourceVariableOverrideNames.includes(v.name)), ...this.resourceScopedVariableDefinitions];
+      return out;
     },
 
     // group variables by section
@@ -182,12 +207,12 @@ export default {
     // if machine scoped, ignore sections
     groupedVariableDefinitions() {
       const out = { };
-      // const startWith = this.isResourceScoped ? { misc: this.variableDefinitions } : this.sectionedVariableDefinitions;
-      let startWith = this.sectionedVariableDefinitions;
+      const startWith = this.resourceOverride ? { misc: this.variableDefinitions } : this.sectionedVariableDefinitions;
+      // let startWith = this.sectionedVariableDefinitions;
 
-      if (this.isResourceScoped) {
-        startWith = { misc: this.resourceScopedVariableDefinitions, overrides: this.globalVariableDefinitions.filter((v) => this.resourceVariableOverrideNames.includes(v.name)) };
-      }
+      // if (this.isResourceScoped) {
+      //   startWith = { misc: this.resourceScopedVariableDefinitions, overrides: this.globalVariableDefinitions.filter((v) => this.resourceVariableOverrideNames.includes(v.name)) };
+      // }
 
       for (const section in startWith) {
         const grouped = { };
@@ -228,10 +253,10 @@ export default {
     },
 
     resourceVariableOverrideNames() {
-      if (!this.isResourceScoped) {
+      if (!this.resourceOverride) {
         return [];
       }
-      const def = (this.uitemplate?.spec?.resources || []).find((r) => r.name === this.resourceScope);
+      const def = (this.uitemplate?.spec?.resources || []).find((r) => r.name === this.resourceOverride);
 
       return def?.overrides || [];
     },
@@ -244,11 +269,15 @@ export default {
     },
 
     updateVariables(val, variableDef) {
-      const out = [...this.ownedVariables];
+      // const out = [...this.ownedVariables];
+      const out = this.ownedVariables;
+
       const existingIdx = this.ownedVariables.findIndex((variable) => variable.name === variableDef.name);
 
       if (existingIdx >= 0) {
-        out[existingIdx].value = val;
+        // this.$set(out, existingIdx, { ...out[existingIdx], value: val });
+        out.splice(existingIdx, 1, { ...out[existingIdx], value: val });
+        // out[existingIdx].value = val;
       } else {
         out.push({ value: val, name: variableDef.name });
       }
@@ -264,7 +293,7 @@ export default {
       const out = [...this.ownedVariables].reduce((acc, existingVar) => {
         const neuDef = (neu || []).find((n) => n.name === existingVar.name);
 
-        if (this.isResourceScoped && neuDef.schema?.openAPIV3Schema?.type !== 'boolean') {
+        if (this.resourceOverride && neuDef.schema?.openAPIV3Schema?.type !== 'boolean') {
           return acc;
         }
 
@@ -299,7 +328,7 @@ export default {
       neu.forEach((def) => {
         let newDefault = def.schema?.openAPIV3Schema?.default;
 
-        if (this.isResourceScoped && def.schema?.openAPIV3Schema?.type !== 'boolean') {
+        if (this.resourceOverride && def.schema?.openAPIV3Schema?.type !== 'boolean') {
           return;
         }
         if (def.schema?.openAPIV3Schema?.type === 'boolean' && !newDefault) {
@@ -363,11 +392,11 @@ export default {
                   :all-variables="value"
                   :variable="variableDef"
                   :value="valueFor(variableDef)"
-                  :is-machine-scoped="isResourceScoped"
+                  :is-resource-override="!!resourceOverride"
                   :global-variables="globalVariables"
                   :uitemplate="uitemplate"
                   :resource-configuration="resourceConfiguration"
-                  :validate-required="!isResourceScoped"
+                  :validate-required="!resourceOverride"
                   :cluster-namespace="clusterNamespace"
                   @update:value="e=>updateVariables(e, variableDef)"
                   @validation-passed="updateErrors"
@@ -400,8 +429,8 @@ export default {
                 :all-variables="value"
                 :variable="variableDef"
                 :value="valueFor(variableDef)"
-                :validate-required="!isResourceScoped"
-                :is-machine-scoped="isResourceScoped"
+                :validate-required="!resourceOverride"
+                :is-resource-override="!!resourceOverride"
                 :cluster-namespace="clusterNamespace"
                 @update:value="e=>updateVariables(e, variableDef)"
                 @validation-passed="updateErrors"
@@ -418,7 +447,7 @@ export default {
       </Accordion>
       <div v-else>
         <div
-          v-if="isResourceScoped && key !== 'misc'"
+          v-if="!!resourceOverride"
           :style="{cursor: 'pointer'}"
           class="expander mt-10"
           @click="()=>expanded=!expanded"
@@ -431,8 +460,8 @@ export default {
           </h5>
         </div>
         <div
-          v-if="expanded || !isResourceScoped || key==='misc'"
-          :class="{'expandee':expanded && key!== 'misc'}"
+          v-if="expanded || !resourceOverride"
+          :class="{'expandee':expanded}"
         >
           <div
             v-for="(group, label) in s"
@@ -456,11 +485,11 @@ export default {
                     :all-variables="value"
                     :variable="variableDef"
                     :value="valueFor(variableDef)"
-                    :is-resource-override="isResourceScoped && key==='misc'"
+                    :is-resource-override="!!resourceOverride"
                     :global-variables="globalVariables"
                     :uitemplate="uitemplate"
                     :resource-configuration="resourceConfiguration"
-                    :validate-required="!isResourceScoped"
+                    :validate-required="!resourceOverride"
                     :cluster-namespace="clusterNamespace"
                     :mode="mode"
                     @update:value="e=>updateVariables(e, variableDef)"
@@ -494,8 +523,8 @@ export default {
                   :all-variables="value"
                   :variable="variableDef"
                   :value="valueFor(variableDef)"
-                  :validate-required="!isResourceScoped"
-                  :is-machine-scoped="isResourceScoped"
+                  :validate-required="!resourceOverride"
+                  :is-resource-override="!!resourceOverride"
                   :cluster-namespace="clusterNamespace"
                   :mode="mode"
                   @update:value="e=>updateVariables(e, variableDef)"

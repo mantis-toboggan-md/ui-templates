@@ -71,7 +71,7 @@ export default {
       class="btn role-secondary"
       :to="createFromTemplateRoute"
     >
-      crunchatize me cap'n
+      Create from Template
     </router-link>
   </div>
 </template>

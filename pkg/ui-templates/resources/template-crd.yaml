@@ -818,6 +818,17 @@ spec:
                       name:
                         type: string
                         description: This value should correspond to some spec.resources[].name
+                      variables:
+                        type: array
+                        description: List of variable values. Only variables listed in spec.resources[].variables will have an effect
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              description: name of variable default
+                            value: 
+                              x-kubernetes-preserve-unknown-fields: true
                       overrides:
                         type: array
                         description: List of variable override values. Only variables listed in spec.resources[].overrides will have an effect

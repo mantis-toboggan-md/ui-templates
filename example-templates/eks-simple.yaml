@@ -1,0 +1,118 @@
+apiVersion: toboggan.md/v1
+kind: Template
+metadata:
+  name: eks-example
+  namespace: default
+spec:
+  patches:
+    - path: 'metadata.generateName'
+      target: cluster
+      template: 'c-{{variables.name}}'
+    - path: 'spec.displayName'
+      target: cluster
+      template: '{{variables.name}}'
+    - path: 'spec.eksConfig.displayName'
+      target: cluster
+      template: '{{variables.name}}'
+    - path: 'spec.eksConfig.amazonCredentialSecret'
+      target: cluster
+      template: '{{variables.cloudCredential}}'
+  resources:
+  - name: cluster
+    min: 1
+    max: 1
+    k8s-type: provisioning.cattle.io.cluster
+    required: true
+    template: |-
+      apiVersion: management.cattle.io/v3
+      kind: Cluster
+      metadata:
+        annotations:
+          authz.management.cattle.io/creator-role-bindings: '{"created":["cluster-owner"],"required":["cluster-owner"]}'
+          authz.management.cattle.io/initial-sync: 'true'
+          field.cattle.io/creatorId: user-c9fqt
+          lifecycle.cattle.io/create.cluster-agent-controller-cleanup: 'true'
+          lifecycle.cattle.io/create.cluster-provisioner-controller: 'true'
+          lifecycle.cattle.io/create.cluster-scoped-gc: 'true'
+          lifecycle.cattle.io/create.mgmt-cluster-rbac-remove: 'true'
+        generateName: REPLACE_ME
+      spec:
+        agentImageOverride: ''
+        answers: {}
+        clusterAgentDeploymentCustomization:
+          overrideAffinity: {}
+          overrideResourceRequirements: {}
+        clusterSecrets: {}
+        description: ''
+        desiredAgentImage: ''
+        desiredAuthImage: ''
+        displayName: REPLACE_ME
+        dockerRootDir: /var/lib/docker
+        eksConfig:
+          amazonCredentialSecret: cattle-global-data:cc-fglgp
+          displayName: REPLACE_ME
+          ebsCSIDriver: null
+          imported: false
+          kmsKey: null
+          kubernetesVersion: '1.34'
+          loggingTypes: []
+          nodeGroups:
+            - arm: null
+              desiredSize: 2
+              diskSize: 20
+              ec2SshKey: ''
+              gpu: false
+              imageId: null
+              instanceType: t3.medium
+              labels: {}
+              launchTemplate: null
+              maxSize: 2
+              minSize: 2
+              nodeRole: ''
+              nodegroupName: group1
+              requestSpotInstances: false
+              resourceTags: {}
+              spotInstanceTypes: []
+              subnets: []
+              tags: {}
+              userData: ''
+              version: '1.34'
+          privateAccess: false
+          publicAccess: true
+          publicAccessSources: []
+          region: us-west-2
+          secretsEncryption: false
+          securityGroups: []
+          serviceRole: null
+          subnets:
+            - subnet-02e4caf6f4ee75111
+            - subnet-0e537e585e74be9a0
+          tags: {}
+        enableNetworkPolicy: false
+        fleetAgentDeploymentCustomization:
+          overrideAffinity: {}
+          overrideResourceRequirements: {}
+        fleetWorkspaceName: fleet-default
+        internal: false
+        localClusterAuthEndpoint:
+          enabled: false
+        windowsPreferedCluster: false
+  resourceDefaults:
+    - name: cluster
+  variables:
+  - metadata:
+      annotations:
+        toboggan.md/component: 'TemplateCloudCredentialAws'
+        toboggan.md/widest: 'true'
+    name: cloudCredential
+    required: true
+    schema:
+      openAPIV3Schema:
+        description: Rancher cloud credentials allow your Rancher server to communicate with and request compute resources from Amazon Web Services. 
+        type: string
+        default: ''
+  - name: name
+    required: true
+    schema:
+      openAPIV3Schema:
+        type: string
