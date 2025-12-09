@@ -1,0 +1,23 @@
+apiVersion: v1
+entries:
+  ui-templates:
+  - annotations:
+      catalog.cattle.io/certified: rancher
+      catalog.cattle.io/namespace: cattle-ui-plugin-system
+      catalog.cattle.io/os: linux
+      catalog.cattle.io/permits-os: linux, windows
+      catalog.cattle.io/rancher-version: '>= 2.10.0'
+      catalog.cattle.io/scope: management
+      catalog.cattle.io/ui-component: plugins
+      catalog.cattle.io/ui-extensions-version: '>= 3.0.0 < 4.0.0'
+    apiVersion: v2
+    appVersion: 0.1.0
+    created: "2025-12-09T15:42:16.265685859Z"
+    description: ui-templates plugin
+    digest: a4b80245e4a2f1e760eba6a967cacc2ba5ea753a469510c1a7caddc58a7acf43
+    name: ui-templates
+    type: application
+    urls:
+    - assets/ui-templates/ui-templates-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-12-09T15:42:16.265112238Z"

@@ -1,0 +1,17 @@
+plugin/img/document.01e5b66a.svg
+plugin/img/harvester.20240f8a.png
+plugin/package.json
+plugin/ui-templates-0.1.0.umd.min.37.js
+plugin/ui-templates-0.1.0.umd.min.37.js.map
+plugin/ui-templates-0.1.0.umd.min.60.js
+plugin/ui-templates-0.1.0.umd.min.60.js.map
+plugin/ui-templates-0.1.0.umd.min.613.js
+plugin/ui-templates-0.1.0.umd.min.613.js.map
+plugin/ui-templates-0.1.0.umd.min.741.js
+plugin/ui-templates-0.1.0.umd.min.741.js.map
+plugin/ui-templates-0.1.0.umd.min.dialog.js
+plugin/ui-templates-0.1.0.umd.min.dialog.js.map
+plugin/ui-templates-0.1.0.umd.min.formatters.js
+plugin/ui-templates-0.1.0.umd.min.formatters.js.map
+plugin/ui-templates-0.1.0.umd.min.js
+plugin/ui-templates-0.1.0.umd.min.js.map
