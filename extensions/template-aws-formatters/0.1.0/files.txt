@@ -1,0 +1,10 @@
+plugin/img/generic-catalog.1842a50e.svg
+plugin/package.json
+plugin/template-aws-formatters-0.1.0.umd.min.60.js
+plugin/template-aws-formatters-0.1.0.umd.min.60.js.map
+plugin/template-aws-formatters-0.1.0.umd.min.869.js
+plugin/template-aws-formatters-0.1.0.umd.min.869.js.map
+plugin/template-aws-formatters-0.1.0.umd.min.formatters.js
+plugin/template-aws-formatters-0.1.0.umd.min.formatters.js.map
+plugin/template-aws-formatters-0.1.0.umd.min.js
+plugin/template-aws-formatters-0.1.0.umd.min.js.map

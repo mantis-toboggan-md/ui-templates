@@ -1,6 +1,6 @@
 apiVersion: v1
 entries:
-  ui-templates:
+  template-aws-formatters:
   - annotations:
       catalog.cattle.io/certified: rancher
       catalog.cattle.io/namespace: cattle-ui-plugin-system
@@ -12,12 +12,12 @@ entries:
       catalog.cattle.io/ui-extensions-version: '>= 3.0.0 < 4.0.0'
     apiVersion: v2
     appVersion: 0.1.0
-    created: "2025-12-09T15:42:16.265685859Z"
-    description: ui-templates plugin
-    digest: a4b80245e4a2f1e760eba6a967cacc2ba5ea753a469510c1a7caddc58a7acf43
-    name: ui-templates
+    created: "2025-12-09T15:42:48.735990722Z"
+    description: template-aws-formatters plugin
+    digest: 5d5774ee3cabc23bce5a16e70c89a356526c6f14e72e0ac9b6384dc735bfbac9
+    name: template-aws-formatters
     type: application
     urls:
-    - assets/ui-templates/ui-templates-0.1.0.tgz
+    - assets/template-aws-formatters/template-aws-formatters-0.1.0.tgz
     version: 0.1.0
-generated: "2025-12-09T15:42:16.265112238Z"
+generated: "2025-12-09T15:42:48.735476196Z"
