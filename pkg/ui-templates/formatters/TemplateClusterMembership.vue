@@ -61,24 +61,8 @@ export default {
 
   methods: {
     async getNormanCluster() {
-      console.log('*** GETTING NORMAN CLUSTER');
-      // const clusterConfig = Object.keys(this.resourceConfiguration).find((resourceName) => {
-      //   const resources = this.resourceConfiguration[resourceName];
-
-      //   const provClusterResource = resources.find((r) => {
-      //     return r?.['k8s-type'] === CAPI.RANCHER_CLUSTER;
-      //   });
-
-      //   if (provClusterResource) {
-      //     return true;
-      //   }
-
-      //   return false;
-      // });
-
       const clusterConfig = this.resourceConfiguration['cluster']?.[0];
 
-      debugger;
       const clusterObject = clusterConfig.objectToBePatched;
 
       const provCluster = await this.$store.dispatch('management/find', { type: CAPI.RANCHER_CLUSTER, id: `${ clusterObject?.metadata?.namespace }/${ clusterObject?.metadata?.name }` });
