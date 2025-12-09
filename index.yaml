@@ -32,12 +32,12 @@ entries:
       catalog.cattle.io/ui-extensions-version: '>= 3.0.0 < 4.0.0'
     apiVersion: v2
     appVersion: 0.1.0
-    created: "2025-12-09T19:41:26.561266988Z"
+    created: "2025-12-09T19:42:31.14663497Z"
     description: ui-templates plugin
-    digest: f2f414336049d3f49dec3e7b1bcb36df8a5b4dd1774539a2f993c8f24ccb8c32
+    digest: 9afebebc8782a609f0737464681a7091d0f76c9883fca27573923528f43f10c5
     name: ui-templates
     type: application
     urls:
     - assets/ui-templates/ui-templates-0.1.0.tgz
     version: 0.1.0
-generated: "2025-12-09T19:41:26.560744306Z"
+generated: "2025-12-09T19:42:31.146272136Z"
