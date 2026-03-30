@@ -1,3 +1,5 @@
+# WARNING
+# this template doesn't work quite right; your cluster will never appear in the mgmt list but resources may be created in aws nontheless
 apiVersion: toboggan.md/v1
 kind: Template
 metadata:
